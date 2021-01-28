@@ -81,7 +81,7 @@ if __name__ == '__main__':
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=batch_size,
-        num_workers=config['training']['nworkers'],
+        # num_workers=config['training']['nworkers'],
         shuffle=True, pin_memory=True, sampler=None, drop_last=True
     )
 
