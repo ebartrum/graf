@@ -45,14 +45,14 @@ class Trainer(TrainerBase):
 class Evaluator(EvaluatorBase):
     def __init__(self, eval_fid_kid, *args, **kwargs):
         super(Evaluator, self).__init__(*args, **kwargs)
-        if eval_fid_kid:
-            self.inception_eval = FIDEvaluator(
-              device=self.device,
-              batch_size=self.batch_size,
-              resize=True,
-              n_samples=20000,
-              n_samples_fake=1000,
-            )
+        # if eval_fid_kid:
+        #     self.inception_eval = FIDEvaluator(
+        #       device=self.device,
+        #       batch_size=self.batch_size,
+        #       resize=True,
+        #       n_samples=20000,
+        #       n_samples_fake=1000,
+        #     )
 
     def get_rays(self, pose):
         return self.generator.val_ray_sampler(self.generator.H, self.generator.W,
@@ -86,7 +86,6 @@ class Evaluator(EvaluatorBase):
         rgb = torch.cat(rgb)
         disp = torch.cat(disp)
         acc = torch.cat(acc)
-
         depth = self.disp_to_cdepth(disp)
 
         return rgb, depth, acc
@@ -121,6 +120,7 @@ class Evaluator(EvaluatorBase):
             return torch.ones_like(disps)
 
         near, far = self.generator.render_kwargs_test['near'], self.generator.render_kwargs_test['far']
+        print(f"near, far are {near}, {far}")
 
         disps = disps / 2 + 0.5  # [-1, 1] -> [0, 1]
 

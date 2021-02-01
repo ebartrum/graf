@@ -113,6 +113,7 @@ def get_render_poses(radius, angle_range=(0, 360), theta=0, N=40, swap_angles=Fa
 
 
 def build_models(config, disc=True):
+    
     from argparse import Namespace
     from submodules.nerf_pytorch.run_nerf_mod import create_nerf
     from .models.generator import Generator
@@ -160,6 +161,9 @@ def build_models(config, disc=True):
 
     return generator, discriminator
 
+def build_generator(config):
+    generator, _ = build_models(config, disc=False)
+    return generator
 
 def build_lr_scheduler(optimizer, config, last_epoch=-1):
     import torch.optim as optim

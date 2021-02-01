@@ -8,7 +8,7 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 import sys
 sys.path.append('submodules')        # needed to make imports work in GAN_stability
@@ -71,9 +71,10 @@ if __name__ == '__main__':
     # Dataset
     train_dataset, hwfr, render_poses = get_data(config)
     # in case of orthographic projection replace focal length by far-near
-    if config['data']['orthographic']:
-        hw_ortho = (config['data']['far']-config['data']['near'], config['data']['far']-config['data']['near'])
-        hwfr[2] = hw_ortho
+    assert(not config['data']['orthographic']), "orthographic not yet supported"
+    # if config['data']['orthographic']: #TODO: put back in
+    #     hw_ortho = (config['data']['far']-config['data']['near'], config['data']['far']-config['data']['near'])
+    #     hwfr[2] = hw_ortho
 
     config['data']['hwfr'] = hwfr         # add for building generator
     print(train_dataset, hwfr, render_poses.shape)
@@ -168,10 +169,10 @@ if __name__ == '__main__':
                           batch_size=batch_size, device=device, inception_nsamples=33)
 
     # Initialize fid+kid evaluator
-    if fid_every > 0:
-        fid_cache_file = os.path.join(out_dir, 'fid_cache_train.npz')
-        kid_cache_file = os.path.join(out_dir, 'kid_cache_train.npz')
-        evaluator.inception_eval.initialize_target(val_loader, cache_file=fid_cache_file, act_cache_file=kid_cache_file)
+    # if fid_every > 0:
+    #     fid_cache_file = os.path.join(out_dir, 'fid_cache_train.npz')
+    #     kid_cache_file = os.path.join(out_dir, 'kid_cache_train.npz')
+    #     evaluator.inception_eval.initialize_target(val_loader, cache_file=fid_cache_file, act_cache_file=kid_cache_file)
 
     # Train
     tstart = t0 = time.time()
@@ -243,9 +244,9 @@ if __name__ == '__main__':
             gloss = trainer.generator_trainstep(y=y, z=z)
             logger.add('losses', 'generator', gloss, it=it)
 
-            if config['training']['take_model_average']:
-                update_average(generator_test, generator,
-                               beta=config['training']['model_average_beta'])
+            # if config['training']['take_model_average']:
+            #     update_average(generator_test, generator,
+            #                    beta=config['training']['model_average_beta'])
 
             # Update learning rate
             g_scheduler.step()
@@ -274,45 +275,45 @@ if __name__ == '__main__':
                 logger.add_imgs(acc, 'acc', it)
 
             # (v) Compute fid if necessary
-            if fid_every > 0 and ((it + 1) % fid_every) == 0:
-                fid, kid = evaluator.compute_fid_kid()
-                logger.add('validation', 'fid', fid, it=it)
-                logger.add('validation', 'kid', kid, it=it)
-                torch.cuda.empty_cache()
-                # save best model
-                if save_best=='fid' and fid < fid_best:
-                    fid_best = fid
-                    print('Saving best model...')
-                    checkpoint_io.save('model_best.pt', it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
-                    logger.save_stats('stats_best.p')
-                    torch.cuda.empty_cache()
-                elif save_best=='kid' and kid < kid_best:
-                    kid_best = kid
-                    print('Saving best model...')
-                    checkpoint_io.save('model_best.pt', it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
-                    logger.save_stats('stats_best.p')
-                    torch.cuda.empty_cache()
+            # if fid_every > 0 and ((it + 1) % fid_every) == 0:
+            #     fid, kid = evaluator.compute_fid_kid()
+            #     logger.add('validation', 'fid', fid, it=it)
+            #     logger.add('validation', 'kid', kid, it=it)
+            #     torch.cuda.empty_cache()
+            #     # save best model
+            #     if save_best=='fid' and fid < fid_best:
+            #         fid_best = fid
+            #         print('Saving best model...')
+            #         checkpoint_io.save('model_best.pt', it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
+            #         logger.save_stats('stats_best.p')
+            #         torch.cuda.empty_cache()
+            #     elif save_best=='kid' and kid < kid_best:
+            #         kid_best = kid
+            #         print('Saving best model...')
+            #         checkpoint_io.save('model_best.pt', it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
+            #         logger.save_stats('stats_best.p')
+            #         torch.cuda.empty_cache()
 
             # (vi) Create video if necessary
-            if ((it+1) % config['training']['video_every']) == 0:
-                N_samples = 4
-                zvid = zdist.sample((N_samples,))
+            # if ((it+1) % config['training']['video_every']) == 0:
+            #     N_samples = 4
+            #     zvid = zdist.sample((N_samples,))
 
-                basename = os.path.join(out_dir, '{}_{:06d}_'.format(os.path.basename(config['expname']), it))
-                evaluator.make_video(basename, zvid, render_poses, as_gif=False)
+            #     basename = os.path.join(out_dir, '{}_{:06d}_'.format(os.path.basename(config['expname']), it))
+            #     evaluator.make_video(basename, zvid, render_poses, as_gif=False)
 
             # (i) Backup if necessary
-            if ((it + 1) % backup_every) == 0:
-                print('Saving backup...')
-                checkpoint_io.save('model_%08d.pt' % it, it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
-                logger.save_stats('stats_%08d.p' % it)
+            # if ((it + 1) % backup_every) == 0:
+            #     print('Saving backup...')
+            #     checkpoint_io.save('model_%08d.pt' % it, it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
+            #     logger.save_stats('stats_%08d.p' % it)
 
             # (vi) Save checkpoint if necessary
-            if time.time() - t0 > save_every:
-                print('Saving checkpoint...')
-                checkpoint_io.save(model_file, it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
-                logger.save_stats('stats.p')
-                t0 = time.time()
+            # if time.time() - t0 > save_every:
+            #     print('Saving checkpoint...')
+            #     checkpoint_io.save(model_file, it=it, epoch_idx=epoch_idx, fid_best=fid_best, kid_best=kid_best)
+            #     logger.save_stats('stats.p')
+            #     t0 = time.time()
 
-                if (restart_every > 0 and t0 - tstart > restart_every):
-                    exit(3)
+            #     if (restart_every > 0 and t0 - tstart > restart_every):
+            #         exit(3)

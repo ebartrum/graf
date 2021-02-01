@@ -11,7 +11,7 @@ from torchvision.utils import save_image
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 # import ssl          # enable if downloading models gives CERTIFICATE_VERIFY_FAILED error
 # ssl._create_default_https_context = ssl._create_unverified_context
