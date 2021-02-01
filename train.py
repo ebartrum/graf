@@ -169,20 +169,6 @@ if __name__ == '__main__':
     evaluator = Evaluator(fid_every > 0, generator_test, zdist, ydist,
                           batch_size=batch_size, device=device, inception_nsamples=33)
 
-
-
-    
-
-
-
-
-
-    # Initialize fid+kid evaluator
-    # if fid_every > 0:
-    #     fid_cache_file = os.path.join(out_dir, 'fid_cache_train.npz')
-    #     kid_cache_file = os.path.join(out_dir, 'kid_cache_train.npz')
-    #     evaluator.inception_eval.initialize_target(val_loader, cache_file=fid_cache_file, act_cache_file=kid_cache_file)
-
     # Train
     tstart = t0 = time.time()
 
@@ -229,7 +215,7 @@ if __name__ == '__main__':
             self.cfg = cfg
 
         def training_step(self, batch, batch_idx, optimizer_idx):
-            it = self.global_step
+            it = self.global_step//2
             x_real = batch
 
             generator.ray_sampler.iterations = it   # for scale annealing
