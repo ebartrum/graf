@@ -1,4 +1,4 @@
-expname: celebA_64
+expname: devel
 data:
   datadir: /home/ed/datasets/img_align_celeba/train/face
   type: celebA

@@ -1,3 +1,4 @@
+import pytorch_lightning as pl
 import argparse
 import os
 from os import path
@@ -19,7 +20,7 @@ from graf.utils import count_trainable_parameters, get_nsamples
 from graf.transforms import ImgToPatch
 
 from GAN_stability.gan_training import utils
-from GAN_stability.gan_training.train import update_average
+from GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
 from GAN_stability.gan_training.logger import Logger
 from GAN_stability.gan_training.checkpoints import CheckpointIO
 from GAN_stability.gan_training.distributions import get_ydist, get_zdist
@@ -168,6 +169,14 @@ if __name__ == '__main__':
     evaluator = Evaluator(fid_every > 0, generator_test, zdist, ydist,
                           batch_size=batch_size, device=device, inception_nsamples=33)
 
+
+
+    
+
+
+
+
+
     # Initialize fid+kid evaluator
     # if fid_every > 0:
     #     fid_cache_file = os.path.join(out_dir, 'fid_cache_train.npz')
@@ -214,8 +223,87 @@ if __name__ == '__main__':
         reg_param=config['training']['reg_param']
     )
 
+    class GRAF(pl.LightningModule):
+        def __init__(self, cfg):
+            super().__init__()
+            self.cfg = cfg
+
+        def training_step(self, batch, batch_idx, optimizer_idx):
+            it = self.global_step
+            x_real = batch
+
+            generator.ray_sampler.iterations = it   # for scale annealing
+
+            # Sample patches for real data
+            rgbs = img_to_patch(x_real.to(device))          # N_samples x C
+
+            # Discriminator updates
+            if optimizer_idx == 0:
+                z = zdist.sample((batch_size,))
+                toggle_grad(generator, False)
+                toggle_grad(discriminator, True)
+                generator.train()
+                discriminator.train()
+
+                x_real.requires_grad_()
+                d_real = discriminator(x_real, y)
+                dloss_real = trainer.compute_loss(d_real, 1)
+                reg_param=self.cfg['training']['reg_param']
+                reg = reg_param * compute_grad2(d_real, x_real).mean()
+                with torch.no_grad():
+                    x_fake = generator(z, y)
+
+                x_fake.requires_grad_()
+                d_fake = discriminator(x_fake, y)
+                dloss_fake = trainer.compute_loss(d_fake, 0)
+                loss = dloss_real + dloss_fake + reg
+
+                logger.add('losses', 'discriminator', dloss_real + dloss_fake, it=it)
+                logger.add('losses', 'regularizer', reg, it=it)
+
+            # Generators updates
+            if optimizer_idx == 1:
+                if self.cfg['nerf']['decrease_noise']:
+                  generator.decrease_nerf_noise(it)
+
+                toggle_grad(generator, True)
+                toggle_grad(discriminator, False)
+                generator.train()
+                discriminator.train()
+
+                z = zdist.sample((batch_size,))
+                x_fake = generator(z, y)
+                d_fake = discriminator(x_fake, y)
+                gloss = trainer.compute_loss(d_fake, 1)
+                logger.add('losses', 'generator', gloss, it=it)
+                loss = gloss
+
+            # (ii) Sample if necessary
+            if ((it % config['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
+                print("Creating samples...")
+                rgb, depth, acc = evaluator.create_samples(ztest.to(device), poses=ptest)
+                logger.add_imgs(rgb, 'rgb', it)
+                logger.add_imgs(depth, 'depth', it)
+                logger.add_imgs(acc, 'acc', it)
+
+            return loss
+
+        def configure_optimizers(self):
+            return ({'optimizer': d_optimizer, 'lr_scheduler': d_scheduler,
+                        'frequency': 1},
+                   {'optimizer': g_optimizer, 'lr_scheduler': g_scheduler,
+                       'frequency': 1})
+
+        def train_dataloader(self):
+            return train_loader
+
     print('it {}: start with LR:\n\td_lr: {}\tg_lr: {}'.format(it, d_optimizer.param_groups[0]['lr'], g_optimizer.param_groups[0]['lr']))
 
+    model = GRAF(config)
+    pl_trainer = pl.Trainer(gpus=1)
+    pl_trainer.fit(model) 
+
+    """
     # Training loop
     print('Start training...')
     while True:
@@ -273,3 +361,7 @@ if __name__ == '__main__':
                 logger.add_imgs(rgb, 'rgb', it)
                 logger.add_imgs(depth, 'depth', it)
                 logger.add_imgs(acc, 'acc', it)
+                """
+
+
+    
