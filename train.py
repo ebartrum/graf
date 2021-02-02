@@ -63,9 +63,9 @@ if __name__ == '__main__':
     save_config(os.path.join(out_dir, 'config.yaml'), config)
 
     # Logger
-    checkpoint_io = CheckpointIO(
-        checkpoint_dir=checkpoint_dir
-    )
+    # checkpoint_io = CheckpointIO(
+    #     checkpoint_dir=checkpoint_dir
+    # )
 
     device = torch.device("cuda:0")
 
@@ -78,7 +78,6 @@ if __name__ == '__main__':
     #     hwfr[2] = hw_ortho
 
     config['data']['hwfr'] = hwfr         # add for building generator
-    print(train_dataset, hwfr, render_poses.shape)
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
@@ -93,10 +92,6 @@ if __name__ == '__main__':
 
     # Create models
     generator, discriminator = build_models(config)
-    print('Generator params: %d' % count_trainable_parameters(generator))
-    print('Discriminator params: %d, channels: %d' % (count_trainable_parameters(discriminator), discriminator.nc))
-    print(generator.render_kwargs_train['network_fn'])
-    print(discriminator)
 
     # Put models on gpu if needed
     generator = generator.to(device)
@@ -110,16 +105,16 @@ if __name__ == '__main__':
     img_to_patch = ImgToPatch(generator.ray_sampler, hwfr[:3])
 
     # Register modules to checkpoint
-    checkpoint_io.register_modules(
-        discriminator=discriminator,
-        g_optimizer=g_optimizer,
-        d_optimizer=d_optimizer,
-        **generator.module_dict     # treat NeRF specially
-    )
+    # checkpoint_io.register_modules(
+    #     discriminator=discriminator,
+    #     g_optimizer=g_optimizer,
+    #     d_optimizer=d_optimizer,
+    #     **generator.module_dict     # treat NeRF specially
+    # )
     
     # Get model file
-    model_file = config['training']['model_file']
-    stats_file = 'stats.p'
+    # model_file = config['training']['model_file']
+    # stats_file = 'stats.p'
 
     # Logger
     logger = Logger(
@@ -153,17 +148,17 @@ if __name__ == '__main__':
         zappearance = zdist.sample((ntest,))[:, zdim_shape:]
         ztest = torch.cat([zshape, zappearance], dim=1)
 
-    utils.save_images(x_real, path.join(out_dir, 'real.png'))
+    # utils.save_images(x_real, path.join(out_dir, 'real.png'))
 
     # Test generator
-    if config['training']['take_model_average']:
-        generator_test = copy.deepcopy(generator)
-        # we have to change the pointers of the parameter function in nerf manually
-        generator_test.parameters = lambda: generator_test._parameters
-        generator_test.named_parameters = lambda: generator_test._named_parameters
-        checkpoint_io.register_modules(**{k+'_test': v for k, v in generator_test.module_dict.items()})
-    else:
-        generator_test = generator
+    # if config['training']['take_model_average']:
+    #     generator_test = copy.deepcopy(generator)
+    #     # we have to change the pointers of the parameter function in nerf manually
+    #     generator_test.parameters = lambda: generator_test._parameters
+    #     generator_test.named_parameters = lambda: generator_test._named_parameters
+    #     checkpoint_io.register_modules(**{k+'_test': v for k, v in generator_test.module_dict.items()})
+    # else:
+    generator_test = generator
 
     # Evaluator
     evaluator = Evaluator(fid_every > 0, generator_test, zdist, ydist,
@@ -173,29 +168,29 @@ if __name__ == '__main__':
     tstart = t0 = time.time()
 
     # Load checkpoint if it exists
-    try:
-        load_dict = checkpoint_io.load(model_file)
-    except FileNotFoundError:
-        it = epoch_idx = -1
-        fid_best = float('inf')
-        kid_best = float('inf')
-    else:
-        it = load_dict.get('it', -1)
-        epoch_idx = load_dict.get('epoch_idx', -1)
-        fid_best = load_dict.get('fid_best', float('inf'))
-        kid_best = load_dict.get('kid_best', float('inf'))
-        logger.load_stats(stats_file)
+    # try:
+    #     load_dict = checkpoint_io.load(model_file)
+    # except FileNotFoundError:
+    #     it = epoch_idx = -1
+    #     fid_best = float('inf')
+    #     kid_best = float('inf')
+    # else:
+    #     it = load_dict.get('it', -1)
+    #     epoch_idx = load_dict.get('epoch_idx', -1)
+    #     fid_best = load_dict.get('fid_best', float('inf'))
+    #     kid_best = load_dict.get('kid_best', float('inf'))
+    #     logger.load_stats(stats_file)
 
-    # Reinitialize model average if needed
-    if (config['training']['take_model_average']
-      and config['training']['model_average_reinit']):
-        update_average(generator_test, generator, 0.)
+    # # Reinitialize model average if needed
+    # if (config['training']['take_model_average']
+    #   and config['training']['model_average_reinit']):
+    #     update_average(generator_test, generator, 0.)
 
     # Learning rate anneling
     d_lr = d_optimizer.param_groups[0]['lr']
     g_lr = g_optimizer.param_groups[0]['lr']
-    g_scheduler = build_lr_scheduler(g_optimizer, config, last_epoch=it)
-    d_scheduler = build_lr_scheduler(d_optimizer, config, last_epoch=it)
+    g_scheduler = build_lr_scheduler(g_optimizer, config, last_epoch=-1)
+    d_scheduler = build_lr_scheduler(d_optimizer, config, last_epoch=-1)
     # ensure lr is not decreased again
     d_optimizer.param_groups[0]['lr'] = d_lr
     g_optimizer.param_groups[0]['lr'] = g_lr
@@ -237,9 +232,9 @@ if __name__ == '__main__':
             gloss = trainer.generator_trainstep(y=y, z=z)
             logger.add('losses', 'generator', gloss, it=it)
 
-            if config['training']['take_model_average']:
-                update_average(generator_test, generator,
-                               beta=config['training']['model_average_beta'])
+            # if config['training']['take_model_average']:
+            #     update_average(generator_test, generator,
+            #                    beta=config['training']['model_average_beta'])
 
             # Update learning rate
             g_scheduler.step()
@@ -275,7 +270,7 @@ if __name__ == '__main__':
         def train_dataloader(self):
             return train_loader
 
-    print('it {}: start with LR:\n\td_lr: {}\tg_lr: {}'.format(it, d_optimizer.param_groups[0]['lr'], g_optimizer.param_groups[0]['lr']))
+    # print('it {}: start with LR:\n\td_lr: {}\tg_lr: {}'.format(it, d_optimizer.param_groups[0]['lr'], g_optimizer.param_groups[0]['lr']))
 
     model = GRAF(config)
     pl_trainer = pl.Trainer(gpus=1, automatic_optimization=False)
