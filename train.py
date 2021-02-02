@@ -90,18 +90,13 @@ if __name__ == '__main__':
             super().__init__()
             self.cfg = cfg
             self.generator, self.discriminator = build_models(config)
-
             self.g_optimizer, self.d_optimizer = build_optimizers(
-                self.generator, self.discriminator, cfg
-            )
-
+                    self.generator, self.discriminator, cfg)
             self.img_to_patch = ImgToPatch(self.generator.ray_sampler, hwfr[:3])
 
-            device = torch.device("cuda:0")
-            self.ydist = get_ydist(1, device=device)         # Dummy to keep GAN training structure in tact
+            self.ydist = get_ydist(1)         # Dummy to keep GAN training structure in tact
             self.y = torch.zeros(batch_size)                 # Dummy to keep GAN training structure in tact
-            self.zdist = get_zdist(cfg['z_dist']['type'], cfg['z_dist']['dim'],
-                              device=device)
+            self.zdist = get_zdist(cfg['z_dist']['type'], cfg['z_dist']['dim'])
 
             # Save for tests
             n_test_samples_with_same_shape_code = config['training']['n_test_samples_with_same_shape_code']
@@ -114,7 +109,7 @@ if __name__ == '__main__':
             self.generator_test = self.generator
             self.evaluator = Evaluator(fid_every > 0, self.generator_test,
                     self.zdist, self.ydist, batch_size=batch_size,
-                    device=device, inception_nsamples=33)
+                    inception_nsamples=33)
 
             # Learning rate anneling
             d_lr = self.d_optimizer.param_groups[0]['lr']
