@@ -2,3 +2,4 @@ results
 *__pycache__*
 lightning_logs
 *.submitit*
+data/*
