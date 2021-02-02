@@ -21,7 +21,6 @@ from graf.transforms import ImgToPatch
 from GAN_stability.gan_training import utils
 from GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
 from GAN_stability.gan_training.logger import Logger
-from GAN_stability.gan_training.checkpoints import CheckpointIO
 from GAN_stability.gan_training.distributions import get_ydist, get_zdist
 from GAN_stability.gan_training.config import load_config, build_optimizers
 
@@ -47,14 +46,10 @@ if __name__ == '__main__':
     assert save_best=='fid' or save_best=='kid', 'Invalid save best metric!'
 
     out_dir = os.path.join(config['training']['outdir'], config['expname'])
-    checkpoint_dir = path.join(out_dir, 'chkpts')
 
     # Create missing directories
     if not path.exists(out_dir):
         os.makedirs(out_dir)
-    if not path.exists(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
-
 
     # Dataset
     train_dataset, hwfr, render_poses = get_data(config)
@@ -73,17 +68,6 @@ if __name__ == '__main__':
     val_loader = train_loader
     hwfr_val = hwfr
 
-    # Logger
-    logger = Logger(
-        log_dir=path.join(out_dir, 'logs'),
-        img_dir=path.join(out_dir, 'imgs'),
-        monitoring=config['training']['monitoring'],
-        monitoring_dir=path.join(out_dir, 'monitoring')
-    )
-
-
-    # Train
-    tstart = t0 = time.time()
 
     class GRAF(pl.LightningModule):
         def __init__(self, cfg):
@@ -110,6 +94,11 @@ if __name__ == '__main__':
             self.evaluator = Evaluator(fid_every > 0, self.generator_test,
                     self.zdist, self.ydist, batch_size=batch_size,
                     inception_nsamples=33)
+            self.my_logger = Logger(
+                log_dir=path.join(out_dir, 'logs'),
+                img_dir=path.join(out_dir, 'imgs'),
+                monitoring=config['training']['monitoring'],
+                monitoring_dir=path.join(out_dir, 'monitoring'))
 
             # Learning rate anneling
             d_lr = self.d_optimizer.param_groups[0]['lr']
@@ -140,8 +129,8 @@ if __name__ == '__main__':
             z = self.zdist.sample((batch_size,))
             dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs,
                     y=self.y, z=z)
-            logger.add('losses', 'discriminator', dloss, it=it)
-            logger.add('losses', 'regularizer', reg, it=it)
+            self.my_logger.add('losses', 'discriminator', dloss, it=it)
+            self.my_logger.add('losses', 'regularizer', reg, it=it)
 
             # Generators updates
             if config['nerf']['decrease_noise']:
@@ -149,7 +138,7 @@ if __name__ == '__main__':
 
             z = self.zdist.sample((batch_size,))
             gloss = self.gan_trainer.generator_trainstep(y=self.y, z=z)
-            logger.add('losses', 'generator', gloss, it=it)
+            self.my_logger.add('losses', 'generator', gloss, it=it)
 
             # Update learning rate
             self.g_scheduler.step()
@@ -158,17 +147,17 @@ if __name__ == '__main__':
             d_lr = self.d_optimizer.param_groups[0]['lr']
             g_lr = self.g_optimizer.param_groups[0]['lr']
 
-            logger.add('learning_rates', 'discriminator', d_lr, it=it)
-            logger.add('learning_rates', 'generator', g_lr, it=it)
+            self.my_logger.add('learning_rates', 'discriminator', d_lr, it=it)
+            self.my_logger.add('learning_rates', 'generator', g_lr, it=it)
 
             # (ii) Sample if necessary
             if ((it % config['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
                 print("Creating samples...")
                 rgb, depth, acc = self.evaluator.create_samples(
                         self.ztest, poses=self.ptest)
-                logger.add_imgs(rgb, 'rgb', it)
-                logger.add_imgs(depth, 'depth', it)
-                logger.add_imgs(acc, 'acc', it)
+                self.my_logger.add_imgs(rgb, 'rgb', it)
+                self.my_logger.add_imgs(depth, 'depth', it)
+                self.my_logger.add_imgs(acc, 'acc', it)
             # (vi) Create video if necessary
             if ((it+1) % config['training']['video_every']) == 0:
                 N_samples = 4
