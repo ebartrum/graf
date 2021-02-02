@@ -24,3 +24,4 @@ nerf:
   netwidth_fine: 32
 training:
   batch_size: 4
+  video_every: 1000

@@ -258,6 +258,13 @@ if __name__ == '__main__':
                 logger.add_imgs(rgb, 'rgb', it)
                 logger.add_imgs(depth, 'depth', it)
                 logger.add_imgs(acc, 'acc', it)
+            # (vi) Create video if necessary
+            if ((it+1) % config['training']['video_every']) == 0:
+                N_samples = 4
+                zvid = zdist.sample((N_samples,))
+
+                basename = os.path.join(out_dir, '{}_{:06d}_'.format(os.path.basename(config['expname']), it))
+                evaluator.make_video(basename, zvid, render_poses, as_gif=True)
 
         def configure_optimizers(self):
             return ({'optimizer': d_optimizer, 'lr_scheduler': d_scheduler,
