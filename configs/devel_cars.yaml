@@ -1,0 +1,27 @@
+expname: devel_cars
+data:
+  datadir: /home/ed/datasets/kaggle_cars/train
+  type: image_folder
+  imsize: 32
+  white_bkgd: False
+  radius: 9.5,10.5
+  near: 7.5
+  far: 12.5
+  fov: 10.
+  umin: 0
+  umax: 0.25
+  vmin: 0.32898992833716556 # 70 deg
+  vmax: 0.45642212862617093   # 85 deg
+z_dist: # The following dims are reduced to make a devel version
+  type: gauss
+  dim: 32
+  dim_appearance: 16 
+discriminator:
+  ndf: 16
+nerf:
+  N_samples: 16
+  netwidth: 32
+  netwidth_fine: 32
+training:
+  batch_size: 4
+  video_every: 1000
