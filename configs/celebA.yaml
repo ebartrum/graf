@@ -1,6 +1,6 @@
-expname: celebA_64
+expname: celebA
 data:
-  datadir: /PATH/TO/CELEBA/Img/img_align_celebA
+  datadir: data/img_align_celebA/face
   type: celebA
   imsize: 64
   white_bkgd: False
@@ -12,4 +12,6 @@ data:
   umax: 0.25
   vmin: 0.32898992833716556 # 70 deg
   vmax: 0.45642212862617093   # 85 deg
-
+training:
+  take_model_average: false # TODO: remove
+  video_every: 1000
