@@ -46,23 +46,18 @@ if __name__ == '__main__':
     assert save_best=='fid' or save_best=='kid', 'Invalid save best metric!'
 
 
-    # Dataset
     train_dataset, hwfr, render_poses = get_data(config)
     assert(not config['data']['orthographic']), "orthographic not yet supported"
-
     config['data']['hwfr'] = hwfr         # add for building generator
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=batch_size,
-        # num_workers=config['training']['nworkers'],
-        shuffle=True, pin_memory=True, sampler=None, drop_last=True
-    )
+        shuffle=True, pin_memory=True, sampler=None, drop_last=True)
 
     val_dataset = train_dataset
     val_loader = train_loader
     hwfr_val = hwfr
-
 
     class GRAF(pl.LightningModule):
         def __init__(self, cfg):
