@@ -36,23 +36,13 @@ if __name__ == '__main__':
     config['data']['fov'] = float(config['data']['fov'])
     config = update_config(config, unknown)
 
-    # Short hands
-    batch_size = config['training']['batch_size']
-    restart_every = config['training']['restart_every']
-    fid_every = config['training']['fid_every']
-    save_every = config['training']['save_every']
-    backup_every = config['training']['backup_every']
-    save_best = config['training']['save_best']
-    assert save_best=='fid' or save_best=='kid', 'Invalid save best metric!'
-
-
     train_dataset, hwfr, render_poses = get_data(config)
     assert(not config['data']['orthographic']), "orthographic not yet supported"
     config['data']['hwfr'] = hwfr         # add for building generator
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=batch_size,
+        batch_size=config['training']['batch_size'],
         shuffle=True, pin_memory=True, sampler=None, drop_last=True)
 
     val_dataset = train_dataset
@@ -63,34 +53,34 @@ if __name__ == '__main__':
         def __init__(self, cfg):
             super().__init__()
             self.cfg = cfg
-            self.generator, self.discriminator = build_models(config)
+            self.generator, self.discriminator = build_models(cfg)
             self.g_optimizer, self.d_optimizer = build_optimizers(
                     self.generator, self.discriminator, cfg)
             self.img_to_patch = ImgToPatch(self.generator.ray_sampler, hwfr[:3])
 
             self.ydist = get_ydist(1)         # Dummy to keep GAN training structure in tact
-            self.y = torch.zeros(batch_size)                 # Dummy to keep GAN training structure in tact
+            self.y = torch.zeros(cfg['training']['batch_size'])                 # Dummy to keep GAN training structure in tact
             self.zdist = get_zdist(cfg['z_dist']['type'], cfg['z_dist']['dim'])
 
-            self.out_dir = os.path.join(config['training']['outdir'], config['expname'])
+            self.out_dir = os.path.join(cfg['training']['outdir'], cfg['expname'])
             if not path.exists(self.out_dir):
                 os.makedirs(self.out_dir)
             # Save for tests
-            n_test_samples_with_same_shape_code = config['training']['n_test_samples_with_same_shape_code']
-            ntest = batch_size
+            n_test_samples_with_same_shape_code = cfg['training']['n_test_samples_with_same_shape_code']
+            ntest = cfg['training']['batch_size']
             x_real = get_nsamples(train_loader, ntest)
             ytest = torch.zeros(ntest)
             self.ztest = self.zdist.sample((ntest,))
             self.ptest = torch.stack([self.generator.sample_pose() for i in range(ntest)])
 
             self.generator_test = self.generator
-            self.evaluator = Evaluator(fid_every > 0, self.generator_test,
-                    self.zdist, self.ydist, batch_size=batch_size,
+            self.evaluator = Evaluator(cfg['training']['fid_every'] > 0, self.generator_test,
+                    self.zdist, self.ydist, batch_size=cfg['training']['batch_size'],
                     inception_nsamples=33)
             self.my_logger = Logger(
                 log_dir=path.join(self.out_dir, 'logs'),
                 img_dir=path.join(self.out_dir, 'imgs'),
-                monitoring=config['training']['monitoring'],
+                monitoring=cfg['training']['monitoring'],
                 monitoring_dir=path.join(self.out_dir, 'monitoring'))
 
             # Learning rate anneling
@@ -104,10 +94,10 @@ if __name__ == '__main__':
 
             self.gan_trainer = Trainer(
                 self.generator, self.discriminator, self.g_optimizer,
-                self.d_optimizer, use_amp=config['training']['use_amp'],
-                gan_type=config['training']['gan_type'],
-                reg_type=config['training']['reg_type'],
-                reg_param=config['training']['reg_param'])
+                self.d_optimizer, use_amp=cfg['training']['use_amp'],
+                gan_type=cfg['training']['gan_type'],
+                reg_type=cfg['training']['reg_type'],
+                reg_param=cfg['training']['reg_param'])
 
         def training_step(self, batch, batch_idx, optimizer_idx):
             it = self.global_step
@@ -119,17 +109,17 @@ if __name__ == '__main__':
             rgbs = self.img_to_patch(x_real.to(self.device))          # N_samples x C
 
             # Discriminator updates
-            z = self.zdist.sample((batch_size,))
+            z = self.zdist.sample((self.cfg['training']['batch_size'],))
             dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs,
                     y=self.y, z=z)
             self.my_logger.add('losses', 'discriminator', dloss, it=it)
             self.my_logger.add('losses', 'regularizer', reg, it=it)
 
             # Generators updates
-            if config['nerf']['decrease_noise']:
+            if self.cfg['nerf']['decrease_noise']:
               self.generator.decrease_nerf_noise(it)
 
-            z = self.zdist.sample((batch_size,))
+            z = self.zdist.sample((self.cfg['training']['batch_size'],))
             gloss = self.gan_trainer.generator_trainstep(y=self.y, z=z)
             self.my_logger.add('losses', 'generator', gloss, it=it)
 
@@ -144,7 +134,7 @@ if __name__ == '__main__':
             self.my_logger.add('learning_rates', 'generator', g_lr, it=it)
 
             # (ii) Sample if necessary
-            if ((it % config['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
+            if ((it % self.cfg['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
                 print("Creating samples...")
                 rgb, depth, acc = self.evaluator.create_samples(
                         self.ztest, poses=self.ptest)
@@ -152,11 +142,11 @@ if __name__ == '__main__':
                 self.my_logger.add_imgs(depth, 'depth', it)
                 self.my_logger.add_imgs(acc, 'acc', it)
             # (vi) Create video if necessary
-            if ((it+1) % config['training']['video_every']) == 0:
+            if ((it+1) % self.cfg['training']['video_every']) == 0:
                 N_samples = 4
                 zvid = self.zdist.sample((N_samples,))
 
-                basename = os.path.join(self.out_dir, '{}_{:06d}_'.format(os.path.basename(config['expname']), it))
+                basename = os.path.join(self.out_dir, '{}_{:06d}_'.format(os.path.basename(self.cfg['expname']), it))
                 self.evaluator.make_video(basename, zvid, render_poses, as_gif=True)
 
         def configure_optimizers(self):
