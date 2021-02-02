@@ -30,28 +30,26 @@ if __name__ == '__main__':
         description='Train a GAN with different regularization strategies.'
     )
     parser.add_argument('config', type=str, help='Path to config file.')
-
     args, unknown = parser.parse_known_args() 
     config = load_config(args.config, 'configs/default.yaml')
-    config['data']['fov'] = float(config['data']['fov'])
     config = update_config(config, unknown)
-
-    train_dataset, hwfr, render_poses = get_data(config)
-    assert(not config['data']['orthographic']), "orthographic not yet supported"
-    config['data']['hwfr'] = hwfr         # add for building generator
-
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=config['training']['batch_size'],
-        shuffle=True, pin_memory=True, sampler=None, drop_last=True)
-
-    val_dataset = train_dataset
-    val_loader = train_loader
-    hwfr_val = hwfr
 
     class GRAF(pl.LightningModule):
         def __init__(self, cfg):
             super().__init__()
+            cfg['data']['fov'] = float(cfg['data']['fov'])
+            train_dataset, hwfr, self.render_poses = get_data(cfg)
+            assert(not config['data']['orthographic']), "orthographic not yet supported"
+            self.train_loader = torch.utils.data.DataLoader(
+                train_dataset,
+                batch_size=config['training']['batch_size'],
+                shuffle=True, pin_memory=True, sampler=None, drop_last=True)
+
+            val_dataset = train_dataset
+            val_loader = self.train_loader
+            hwfr_val = hwfr
+
+            cfg['data']['hwfr'] = hwfr         # add for building generator
             self.cfg = cfg
             self.generator, self.discriminator = build_models(cfg)
             self.g_optimizer, self.d_optimizer = build_optimizers(
@@ -68,7 +66,7 @@ if __name__ == '__main__':
             # Save for tests
             n_test_samples_with_same_shape_code = cfg['training']['n_test_samples_with_same_shape_code']
             ntest = cfg['training']['batch_size']
-            x_real = get_nsamples(train_loader, ntest)
+            x_real = get_nsamples(self.train_loader, ntest)
             ytest = torch.zeros(ntest)
             self.ztest = self.zdist.sample((ntest,))
             self.ptest = torch.stack([self.generator.sample_pose() for i in range(ntest)])
@@ -147,7 +145,7 @@ if __name__ == '__main__':
                 zvid = self.zdist.sample((N_samples,))
 
                 basename = os.path.join(self.out_dir, '{}_{:06d}_'.format(os.path.basename(self.cfg['expname']), it))
-                self.evaluator.make_video(basename, zvid, render_poses, as_gif=True)
+                self.evaluator.make_video(basename, zvid, self.render_poses, as_gif=True)
 
         def configure_optimizers(self):
             return ({'optimizer': self.d_optimizer, 'lr_scheduler': self.d_scheduler,
@@ -156,7 +154,7 @@ if __name__ == '__main__':
                        'frequency': 1})
 
         def train_dataloader(self):
-            return train_loader
+            return self.train_loader
 
     model = GRAF(config)
     pl_trainer = pl.Trainer(gpus=1, automatic_optimization=False)
