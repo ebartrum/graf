@@ -138,18 +138,17 @@ if __name__ == '__main__':
     d_optimizer.param_groups[0]['lr'] = d_lr
     g_optimizer.param_groups[0]['lr'] = g_lr
 
-    # Trainer
-    trainer = Trainer(
-        generator, discriminator, g_optimizer, d_optimizer,
-        use_amp=config['training']['use_amp'],
-        gan_type=config['training']['gan_type'],
-        reg_type=config['training']['reg_type'],
-        reg_param=config['training']['reg_param'])
 
     class GRAF(pl.LightningModule):
         def __init__(self, cfg):
             super().__init__()
             self.cfg = cfg
+            self.gan_trainer = Trainer(
+                generator, discriminator, g_optimizer, d_optimizer,
+                use_amp=config['training']['use_amp'],
+                gan_type=config['training']['gan_type'],
+                reg_type=config['training']['reg_type'],
+                reg_param=config['training']['reg_param'])
 
         def training_step(self, batch, batch_idx, optimizer_idx):
             it = self.global_step
@@ -162,7 +161,7 @@ if __name__ == '__main__':
 
             # Discriminator updates
             z = zdist.sample((batch_size,))
-            dloss, reg = trainer.discriminator_trainstep(rgbs, y=y, z=z)
+            dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs, y=y, z=z)
             logger.add('losses', 'discriminator', dloss, it=it)
             logger.add('losses', 'regularizer', reg, it=it)
 
@@ -171,7 +170,7 @@ if __name__ == '__main__':
               generator.decrease_nerf_noise(it)
 
             z = zdist.sample((batch_size,))
-            gloss = trainer.generator_trainstep(y=y, z=z)
+            gloss = self.gan_trainer.generator_trainstep(y=y, z=z)
             logger.add('losses', 'generator', gloss, it=it)
 
             # Update learning rate
