@@ -45,11 +45,6 @@ if __name__ == '__main__':
     save_best = config['training']['save_best']
     assert save_best=='fid' or save_best=='kid', 'Invalid save best metric!'
 
-    out_dir = os.path.join(config['training']['outdir'], config['expname'])
-
-    # Create missing directories
-    if not path.exists(out_dir):
-        os.makedirs(out_dir)
 
     # Dataset
     train_dataset, hwfr, render_poses = get_data(config)
@@ -82,6 +77,9 @@ if __name__ == '__main__':
             self.y = torch.zeros(batch_size)                 # Dummy to keep GAN training structure in tact
             self.zdist = get_zdist(cfg['z_dist']['type'], cfg['z_dist']['dim'])
 
+            self.out_dir = os.path.join(config['training']['outdir'], config['expname'])
+            if not path.exists(self.out_dir):
+                os.makedirs(self.out_dir)
             # Save for tests
             n_test_samples_with_same_shape_code = config['training']['n_test_samples_with_same_shape_code']
             ntest = batch_size
@@ -95,10 +93,10 @@ if __name__ == '__main__':
                     self.zdist, self.ydist, batch_size=batch_size,
                     inception_nsamples=33)
             self.my_logger = Logger(
-                log_dir=path.join(out_dir, 'logs'),
-                img_dir=path.join(out_dir, 'imgs'),
+                log_dir=path.join(self.out_dir, 'logs'),
+                img_dir=path.join(self.out_dir, 'imgs'),
                 monitoring=config['training']['monitoring'],
-                monitoring_dir=path.join(out_dir, 'monitoring'))
+                monitoring_dir=path.join(self.out_dir, 'monitoring'))
 
             # Learning rate anneling
             d_lr = self.d_optimizer.param_groups[0]['lr']
@@ -163,7 +161,7 @@ if __name__ == '__main__':
                 N_samples = 4
                 zvid = self.zdist.sample((N_samples,))
 
-                basename = os.path.join(out_dir, '{}_{:06d}_'.format(os.path.basename(config['expname']), it))
+                basename = os.path.join(self.out_dir, '{}_{:06d}_'.format(os.path.basename(config['expname']), it))
                 self.evaluator.make_video(basename, zvid, render_poses, as_gif=True)
 
         def configure_optimizers(self):
