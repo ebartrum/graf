@@ -120,7 +120,6 @@ class Evaluator(EvaluatorBase):
             return torch.ones_like(disps)
 
         near, far = self.generator.render_kwargs_test['near'], self.generator.render_kwargs_test['far']
-        print(f"near, far are {near}, {far}")
 
         disps = disps / 2 + 0.5  # [-1, 1] -> [0, 1]
 
