@@ -215,90 +215,9 @@ if __name__ == '__main__':
             self.cfg = cfg
 
         def training_step(self, batch, batch_idx, optimizer_idx):
-            it = self.global_step//2
+            it = self.global_step
             x_real = batch
 
-            generator.ray_sampler.iterations = it   # for scale annealing
-
-            # Sample patches for real data
-            rgbs = img_to_patch(x_real.to(device))          # N_samples x C
-
-            # Discriminator updates
-            if optimizer_idx == 0:
-                z = zdist.sample((batch_size,))
-                toggle_grad(generator, False)
-                toggle_grad(discriminator, True)
-                generator.train()
-                discriminator.train()
-
-                x_real.requires_grad_()
-                d_real = discriminator(x_real, y)
-                dloss_real = trainer.compute_loss(d_real, 1)
-                reg_param=self.cfg['training']['reg_param']
-                reg = reg_param * compute_grad2(d_real, x_real).mean()
-                with torch.no_grad():
-                    x_fake = generator(z, y)
-
-                x_fake.requires_grad_()
-                d_fake = discriminator(x_fake, y)
-                dloss_fake = trainer.compute_loss(d_fake, 0)
-                loss = dloss_real + dloss_fake + reg
-
-                logger.add('losses', 'discriminator', dloss_real + dloss_fake, it=it)
-                logger.add('losses', 'regularizer', reg, it=it)
-
-            # Generators updates
-            if optimizer_idx == 1:
-                if self.cfg['nerf']['decrease_noise']:
-                  generator.decrease_nerf_noise(it)
-
-                toggle_grad(generator, True)
-                toggle_grad(discriminator, False)
-                generator.train()
-                discriminator.train()
-
-                z = zdist.sample((batch_size,))
-                x_fake = generator(z, y)
-                d_fake = discriminator(x_fake, y)
-                gloss = trainer.compute_loss(d_fake, 1)
-                logger.add('losses', 'generator', gloss, it=it)
-                loss = gloss
-
-            # (ii) Sample if necessary
-            if ((it % config['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
-                print("Creating samples...")
-                rgb, depth, acc = evaluator.create_samples(ztest.to(device), poses=ptest)
-                logger.add_imgs(rgb, 'rgb', it)
-                logger.add_imgs(depth, 'depth', it)
-                logger.add_imgs(acc, 'acc', it)
-
-            return loss
-
-        def configure_optimizers(self):
-            return ({'optimizer': d_optimizer, 'lr_scheduler': d_scheduler,
-                        'frequency': 1},
-                   {'optimizer': g_optimizer, 'lr_scheduler': g_scheduler,
-                       'frequency': 1})
-
-        def train_dataloader(self):
-            return train_loader
-
-    print('it {}: start with LR:\n\td_lr: {}\tg_lr: {}'.format(it, d_optimizer.param_groups[0]['lr'], g_optimizer.param_groups[0]['lr']))
-
-    model = GRAF(config)
-    pl_trainer = pl.Trainer(gpus=1)
-    pl_trainer.fit(model) 
-
-    """
-    # Training loop
-    print('Start training...')
-    while True:
-        epoch_idx += 1
-        print('Start epoch %d...' % epoch_idx)
-
-        for x_real in train_loader:
-            t_it = time.time()
-            it += 1
             generator.ray_sampler.iterations = it   # for scale annealing
 
             # Sample patches for real data
@@ -318,9 +237,9 @@ if __name__ == '__main__':
             gloss = trainer.generator_trainstep(y=y, z=z)
             logger.add('losses', 'generator', gloss, it=it)
 
-            # if config['training']['take_model_average']:
-            #     update_average(generator_test, generator,
-            #                    beta=config['training']['model_average_beta'])
+            if config['training']['take_model_average']:
+                update_average(generator_test, generator,
+                               beta=config['training']['model_average_beta'])
 
             # Update learning rate
             g_scheduler.step()
@@ -332,22 +251,25 @@ if __name__ == '__main__':
             logger.add('learning_rates', 'discriminator', d_lr, it=it)
             logger.add('learning_rates', 'generator', g_lr, it=it)
 
-            dt = time.time() - t_it
-            # Print stats
-            if ((it + 1) % config['training']['print_every']) == 0:
-                g_loss_last = logger.get_last('losses', 'generator')
-                d_loss_last = logger.get_last('losses', 'discriminator')
-                d_reg_last = logger.get_last('losses', 'regularizer')
-                print('[%s epoch %0d, it %4d, t %0.3f] g_loss = %.4f, d_loss = %.4f, reg=%.4f'
-                      % (config['expname'], epoch_idx, it + 1, dt, g_loss_last, d_loss_last, d_reg_last))
-
             # (ii) Sample if necessary
             if ((it % config['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
+                print("Creating samples...")
                 rgb, depth, acc = evaluator.create_samples(ztest.to(device), poses=ptest)
                 logger.add_imgs(rgb, 'rgb', it)
                 logger.add_imgs(depth, 'depth', it)
                 logger.add_imgs(acc, 'acc', it)
-                """
 
+        def configure_optimizers(self):
+            return ({'optimizer': d_optimizer, 'lr_scheduler': d_scheduler,
+                        'frequency': 1},
+                   {'optimizer': g_optimizer, 'lr_scheduler': g_scheduler,
+                       'frequency': 1})
 
-    
+        def train_dataloader(self):
+            return train_loader
+
+    print('it {}: start with LR:\n\td_lr: {}\tg_lr: {}'.format(it, d_optimizer.param_groups[0]['lr'], g_optimizer.param_groups[0]['lr']))
+
+    model = GRAF(config)
+    pl_trainer = pl.Trainer(gpus=1, automatic_optimization=False)
+    pl_trainer.fit(model) 
