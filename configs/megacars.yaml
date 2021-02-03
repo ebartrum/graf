@@ -12,7 +12,7 @@ data:
   umax: 1
   vmin: 0.0
   vmax: 0.0
-  crop: 100
+  crop: 80
 training:
   take_model_average: false # TODO: remove
   video_every: 1000
