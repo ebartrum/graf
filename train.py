@@ -45,10 +45,6 @@ class BaseGAN(pl.LightningModule):
         self.g_optimizer, self.d_optimizer = build_optimizers(
                 self.generator, self.discriminator, cfg)
 
-        # self.ydist = get_ydist(1)         # Dummy to keep GAN training structure in tact
-        # self.y = torch.zeros(cfg['training']['batch_size'])                 # Dummy to keep GAN training structure in tact
-        self.zdist = get_zdist(cfg['z_dist']['type'], cfg['z_dist']['dim'])
-
         self.out_dir = os.path.join(cfg['training']['outdir'], cfg['expname'])
         if not path.exists(self.out_dir):
             os.makedirs(self.out_dir)
@@ -56,13 +52,13 @@ class BaseGAN(pl.LightningModule):
         n_test_samples_with_same_shape_code = cfg['training']['n_test_samples_with_same_shape_code']
         ntest = cfg['training']['batch_size']
         x_real = get_nsamples(self.train_loader, ntest)
-        ytest = torch.zeros(ntest)
-        self.ztest = self.zdist.sample((ntest,))
+        self.ztest = torch.randn(ntest, cfg['z_dist']['dim'])
         self.ptest = torch.stack([self.generator.sample_pose() for i in range(ntest)])
 
         self.generator_test = self.generator
-        self.evaluator = Evaluator(cfg['training']['fid_every'] > 0, self.generator_test,
-                self.zdist, batch_size=cfg['training']['batch_size'],
+        self.evaluator = Evaluator(cfg['training']['fid_every'] > 0,
+                self.generator_test, noise_dim=cfg['z_dist']['dim'],
+                batch_size=cfg['training']['batch_size'],
                 inception_nsamples=33)
         self.my_logger = Logger(
             log_dir=path.join(self.out_dir, 'logs'),
@@ -96,7 +92,7 @@ class BaseGAN(pl.LightningModule):
         rgbs = self.img_to_patch(x_real.to(self.device))          # N_samples x C
 
         # Discriminator updates
-        z = self.zdist.sample((self.cfg['training']['batch_size'],))
+        z = torch.randn(self.cfg['training']['batch_size'], self.cfg['z_dist']['dim'])
         dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs,z=z)
         self.my_logger.add('losses', 'discriminator', dloss, it=it)
         self.my_logger.add('losses', 'regularizer', reg, it=it)
@@ -105,7 +101,7 @@ class BaseGAN(pl.LightningModule):
         if self.cfg['nerf']['decrease_noise']:
           self.generator.decrease_nerf_noise(it)
 
-        z = self.zdist.sample((self.cfg['training']['batch_size'],))
+        z = torch.randn(self.cfg['training']['batch_size'], self.cfg['z_dist']['dim'])
         gloss = self.gan_trainer.generator_trainstep(z=z)
         self.my_logger.add('losses', 'generator', gloss, it=it)
 
@@ -130,7 +126,7 @@ class BaseGAN(pl.LightningModule):
         # (vi) Create video if necessary
         if ((it+1) % self.cfg['training']['video_every']) == 0:
             N_samples = 4
-            zvid = self.zdist.sample((N_samples,))
+            zvid = torch.randn(N_samples, self.cfg['z_dist']['dim'])
 
             basename = os.path.join(self.out_dir, '{}_{:06d}_'.format(os.path.basename(self.cfg['expname']), it))
             self.evaluator.make_video(basename, zvid, self.render_poses, as_gif=True)

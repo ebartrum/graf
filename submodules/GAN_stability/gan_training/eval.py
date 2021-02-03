@@ -3,11 +3,11 @@ from GAN_stability.gan_training.metrics import inception_score
 
 
 class Evaluator(object):
-    def __init__(self, generator, zdist, batch_size=64,
+    def __init__(self, generator, noise_dim, batch_size=64,
                  inception_nsamples=60000, device=None):
         self.generator = generator
-        self.zdist = zdist
         self.inception_nsamples = inception_nsamples
+        self.noise_dim = noise_dim
         self.batch_size = batch_size
         self.device = device
 
@@ -15,10 +15,9 @@ class Evaluator(object):
         self.generator.eval()
         imgs = []
         while(len(imgs) < self.inception_nsamples):
-            ztest = self.zdist.sample((self.batch_size,))
-            ytest = self.ydist.sample((self.batch_size,))
+            ztest = torch.randn(self.batch_size, cfg['z_dist']['dim'])
 
-            samples = self.generator(ztest, ytest)
+            samples = self.generator(ztest)
             samples = [s.data.cpu().numpy() for s in samples]
             imgs.extend(samples)
 
@@ -29,16 +28,10 @@ class Evaluator(object):
 
         return score, score_std
 
-    def create_samples(self, z, y=None):
+    def create_samples(self, z):
         self.generator.eval()
         batch_size = z.size(0)
-        # Parse y
-        if y is None:
-            y = self.ydist.sample((batch_size,))
-        elif isinstance(y, int):
-            y = torch.full((batch_size,), y,
-                           device=self.device, dtype=torch.int64)
         # Sample x
         with torch.no_grad():
-            x = self.generator(z, y)
+            x = self.generator(z)
         return x
