@@ -85,6 +85,7 @@ class BaseGAN(pl.LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         it = self.global_step
         x_real = batch
+        
         self.generator.ray_sampler.iterations = it   # for scale annealing
 
         # Sample patches for real data

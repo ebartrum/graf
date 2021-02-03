@@ -3,7 +3,6 @@ data:
   datadir: /home/ed/datasets/meganet/cars/train
   type: image_folder
   imsize: 32 
-  white_bkgd: True
   white_alpha_bg: True
   radius: 9.5,10.5
   near: 7.5
@@ -13,6 +12,7 @@ data:
   umax: 1
   vmin: 0.0
   vmax: 0.0
+  crop: 100
 training:
   take_model_average: false # TODO: remove
   video_every: 1000

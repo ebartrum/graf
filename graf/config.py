@@ -79,6 +79,8 @@ def get_data(config):
         dset = CUB(**kwargs)
 
     elif dset_type == 'image_folder':
+        if config['data']['crop'] > 0:
+            transforms.transforms.insert(0, CenterCrop(config['data']['crop']))
         dset = ImageDataset(data_dirs=glob.glob(kwargs['data_dirs']+'/*'),
                 transforms=transforms,
                 white_alpha_bg=config['data']['white_alpha_bg'])

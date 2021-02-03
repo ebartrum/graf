@@ -14,6 +14,7 @@ data:
   umax: 1.                    # 360 deg, convert to degree via 360. * u
   vmin: 0.                    # 0 deg, convert to degrees via arccos(1 - 2 * v) * 180. / pi
   vmax: 0.45642212862617093   # 85 deg, convert to degrees via arccos(1 - 2 * v) * 180. / pi
+  crop: 0
 nerf:
   i_embed: 0
   use_viewdirs: True
