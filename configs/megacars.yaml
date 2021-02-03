@@ -2,7 +2,7 @@ expname: mega_cars
 data:
   datadir: data/megacars/train
   type: image_folder
-  imsize: 64
+  imsize: 128
   white_alpha_bg: True
   radius: 9.5,10.5
   near: 7.5
