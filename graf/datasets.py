@@ -11,13 +11,14 @@ class ImageDataset(VisionDataset):
     Folder structure: data_dir/filename.png
     """
 
-    def __init__(self, data_dirs, transforms=None):
+    def __init__(self, data_dirs, transforms=None, white_alpha_bg=False):
         # Use multiple root folders
         if not isinstance(data_dirs, list):
             data_dirs = [data_dirs]
-
+        
         # initialize base class
         VisionDataset.__init__(self, root=data_dirs, transform=transforms)
+        self.white_alpha_bg = white_alpha_bg
 
         self.filenames = []
         root = []
@@ -36,7 +37,11 @@ class ImageDataset(VisionDataset):
 
     def __getitem__(self, idx):
         filename = self.filenames[idx]
-        img = Image.open(filename).convert('RGB')
+        img = Image.open(filename)
+        if self.white_alpha_bg:
+            bg = Image.new(img.mode, (img.width, img.height), (255, 255, 255))
+            img = Image.alpha_composite(bg, img)
+        img = img.convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
         return img

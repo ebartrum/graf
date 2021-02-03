@@ -80,7 +80,8 @@ def get_data(config):
 
     elif dset_type == 'image_folder':
         dset = ImageDataset(data_dirs=glob.glob(kwargs['data_dirs']+'/*'),
-                transforms=transforms)
+                transforms=transforms,
+                white_alpha_bg=config['data']['white_alpha_bg'])
 
     dset.H = dset.W = imsize
     dset.focal = W/2 * 1 / np.tan((.5 * fov * np.pi/180.))

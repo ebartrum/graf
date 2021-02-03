@@ -4,6 +4,7 @@ data:
   type: carla
   imsize: 64
   white_bkgd: True
+  white_alpha_bg: False
   near: 1.
   far: 6.
   radius: 3.4                 # set according to near and far plane

@@ -1,0 +1,18 @@
+expname: mega_cars_devel
+data:
+  datadir: /home/ed/datasets/meganet/cars/train
+  type: image_folder
+  imsize: 32 
+  white_bkgd: True
+  white_alpha_bg: True
+  radius: 9.5,10.5
+  near: 7.5
+  far: 12.5
+  fov: 10.
+  umin: 0
+  umax: 1
+  vmin: 0.0
+  vmax: 0.0
+training:
+  take_model_average: false # TODO: remove
+  video_every: 1000

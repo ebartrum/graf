@@ -1,0 +1,21 @@
+expname: carla_128
+data:
+  imsize: 32
+  datadir: data/carla
+  type: carla
+  radius: 10.
+  near: 7.5
+  far: 12.5
+  fov: 30.0
+z_dist:
+  dim: 32
+  dim_appearance: 16 
+discriminator:
+  ndf: 16
+nerf:
+  N_samples: 16
+  netwidth: 32
+  netwidth_fine: 32
+training:
+  batch_size: 4
+  video_every: 1000
