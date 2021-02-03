@@ -24,7 +24,7 @@ from GAN_stability.gan_training.logger import Logger
 from GAN_stability.gan_training.distributions import get_ydist, get_zdist
 from GAN_stability.gan_training.config import load_config, build_optimizers
 
-class GRAF(pl.LightningModule):
+class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
         cfg['data']['fov'] = float(cfg['data']['fov'])
@@ -44,7 +44,6 @@ class GRAF(pl.LightningModule):
         self.generator, self.discriminator = build_models(cfg)
         self.g_optimizer, self.d_optimizer = build_optimizers(
                 self.generator, self.discriminator, cfg)
-        self.img_to_patch = ImgToPatch(self.generator.ray_sampler, hwfr[:3])
 
         self.ydist = get_ydist(1)         # Dummy to keep GAN training structure in tact
         self.y = torch.zeros(cfg['training']['batch_size'])                 # Dummy to keep GAN training structure in tact
@@ -145,6 +144,11 @@ class GRAF(pl.LightningModule):
 
     def train_dataloader(self):
         return self.train_loader
+
+class GRAF(BaseGAN):
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.img_to_patch = ImgToPatch(self.generator.ray_sampler, cfg['data']['hwfr'][:3])
 
 parser = argparse.ArgumentParser(
     description='Train a GAN with different regularization strategies.'
