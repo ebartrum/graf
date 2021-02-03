@@ -17,10 +17,9 @@ class Trainer(TrainerBase):
         if self.use_amp:
             self.scaler = torch.cuda.amp.GradScaler()
 
-    def generator_trainstep(self, y, z):
+    def generator_trainstep(self, z):
         if not self.use_amp:
-            return super(Trainer, self).generator_trainstep(y, z)
-        assert (y.size(0) == z.size(0))
+            return super(Trainer, self).generator_trainstep(z)
         toggle_grad(self.generator, True)
         toggle_grad(self.discriminator, False)
         self.generator.train()
@@ -28,8 +27,8 @@ class Trainer(TrainerBase):
         self.g_optimizer.zero_grad()
 
         with torch.cuda.amp.autocast():
-            x_fake = self.generator(z, y)
-            d_fake = self.discriminator(x_fake, y)
+            x_fake = self.generator(z)
+            d_fake = self.discriminator(x_fake)
             gloss = self.compute_loss(d_fake, 1)
         self.scaler.scale(gloss).backward()
 
@@ -38,9 +37,8 @@ class Trainer(TrainerBase):
 
         return gloss.item()
 
-    def discriminator_trainstep(self, x_real, y, z):
-        return super(Trainer, self).discriminator_trainstep(x_real, y, z)       # spectral norm raises error for when using amp
-
+    def discriminator_trainstep(self, x_real, z):
+        return super(Trainer, self).discriminator_trainstep(x_real, z)       # spectral norm raises error for when using amp
 
 class Evaluator(EvaluatorBase):
     def __init__(self, eval_fid_kid, *args, **kwargs):

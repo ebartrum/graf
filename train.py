@@ -21,7 +21,7 @@ from graf.transforms import ImgToPatch
 from GAN_stability.gan_training import utils
 from GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
 from GAN_stability.gan_training.logger import Logger
-from GAN_stability.gan_training.distributions import get_ydist, get_zdist
+from GAN_stability.gan_training.distributions import get_zdist
 from GAN_stability.gan_training.config import load_config, build_optimizers
 
 class BaseGAN(pl.LightningModule):
@@ -45,8 +45,8 @@ class BaseGAN(pl.LightningModule):
         self.g_optimizer, self.d_optimizer = build_optimizers(
                 self.generator, self.discriminator, cfg)
 
-        self.ydist = get_ydist(1)         # Dummy to keep GAN training structure in tact
-        self.y = torch.zeros(cfg['training']['batch_size'])                 # Dummy to keep GAN training structure in tact
+        # self.ydist = get_ydist(1)         # Dummy to keep GAN training structure in tact
+        # self.y = torch.zeros(cfg['training']['batch_size'])                 # Dummy to keep GAN training structure in tact
         self.zdist = get_zdist(cfg['z_dist']['type'], cfg['z_dist']['dim'])
 
         self.out_dir = os.path.join(cfg['training']['outdir'], cfg['expname'])
@@ -62,7 +62,7 @@ class BaseGAN(pl.LightningModule):
 
         self.generator_test = self.generator
         self.evaluator = Evaluator(cfg['training']['fid_every'] > 0, self.generator_test,
-                self.zdist, self.ydist, batch_size=cfg['training']['batch_size'],
+                self.zdist, batch_size=cfg['training']['batch_size'],
                 inception_nsamples=33)
         self.my_logger = Logger(
             log_dir=path.join(self.out_dir, 'logs'),
@@ -97,8 +97,7 @@ class BaseGAN(pl.LightningModule):
 
         # Discriminator updates
         z = self.zdist.sample((self.cfg['training']['batch_size'],))
-        dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs,
-                y=self.y, z=z)
+        dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs,z=z)
         self.my_logger.add('losses', 'discriminator', dloss, it=it)
         self.my_logger.add('losses', 'regularizer', reg, it=it)
 
@@ -107,7 +106,7 @@ class BaseGAN(pl.LightningModule):
           self.generator.decrease_nerf_noise(it)
 
         z = self.zdist.sample((self.cfg['training']['batch_size'],))
-        gloss = self.gan_trainer.generator_trainstep(y=self.y, z=z)
+        gloss = self.gan_trainer.generator_trainstep(z=z)
         self.my_logger.add('losses', 'generator', gloss, it=it)
 
         # Update learning rate

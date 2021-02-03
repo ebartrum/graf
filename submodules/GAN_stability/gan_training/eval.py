@@ -3,11 +3,10 @@ from GAN_stability.gan_training.metrics import inception_score
 
 
 class Evaluator(object):
-    def __init__(self, generator, zdist, ydist, batch_size=64,
+    def __init__(self, generator, zdist, batch_size=64,
                  inception_nsamples=60000, device=None):
         self.generator = generator
         self.zdist = zdist
-        self.ydist = ydist
         self.inception_nsamples = inception_nsamples
         self.batch_size = batch_size
         self.device = device

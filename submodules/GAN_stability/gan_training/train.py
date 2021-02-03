@@ -18,16 +18,15 @@ class Trainer(object):
         self.reg_type = reg_type
         self.reg_param = reg_param
 
-    def generator_trainstep(self, y, z):
-        assert(y.size(0) == z.size(0))
+    def generator_trainstep(self, z):
         toggle_grad(self.generator, True)
         toggle_grad(self.discriminator, False)
         self.generator.train()
         self.discriminator.train()
         self.g_optimizer.zero_grad()
 
-        x_fake = self.generator(z, y)
-        d_fake = self.discriminator(x_fake, y)
+        x_fake = self.generator(z)
+        d_fake = self.discriminator(x_fake)
         gloss = self.compute_loss(d_fake, 1)
         gloss.backward()
 
@@ -35,7 +34,7 @@ class Trainer(object):
 
         return gloss.item()
 
-    def discriminator_trainstep(self, x_real, y, z):
+    def discriminator_trainstep(self, x_real, z):
         toggle_grad(self.generator, False)
         toggle_grad(self.discriminator, True)
         self.generator.train()
@@ -45,7 +44,7 @@ class Trainer(object):
         # On real data
         x_real.requires_grad_()
 
-        d_real = self.discriminator(x_real, y)
+        d_real = self.discriminator(x_real)
         dloss_real = self.compute_loss(d_real, 1)
 
         if self.reg_type == 'real' or self.reg_type == 'real_fake':
@@ -57,10 +56,10 @@ class Trainer(object):
 
         # On fake data
         with torch.no_grad():
-            x_fake = self.generator(z, y)
+            x_fake = self.generator(z)
 
         x_fake.requires_grad_()
-        d_fake = self.discriminator(x_fake, y)
+        d_fake = self.discriminator(x_fake)
         dloss_fake = self.compute_loss(d_fake, 0)
 
         if self.reg_type == 'fake' or self.reg_type == 'real_fake':
@@ -71,10 +70,10 @@ class Trainer(object):
             dloss_fake.backward()
 
         if self.reg_type == 'wgangp':
-            reg = self.reg_param * self.wgan_gp_reg(x_real, x_fake, y)
+            reg = self.reg_param * self.wgan_gp_reg(x_real, x_fake)
             reg.backward()
         elif self.reg_type == 'wgangp0':
-            reg = self.reg_param * self.wgan_gp_reg(x_real, x_fake, y, center=0.)
+            reg = self.reg_param * self.wgan_gp_reg(x_real, x_fake, center=0.)
             reg.backward()
 
         self.d_optimizer.step()
@@ -107,7 +106,8 @@ class Trainer(object):
 
         return loss / len(d_outs)
 
-    def wgan_gp_reg(self, x_real, x_fake, y, center=1.):
+    def wgan_gp_reg(self, x_real, x_fake, center=1.):
+        import ipdb;ipdb.set_trace()
         batch_size = y.size(0)
         eps = torch.rand(batch_size, device=y.device).view(batch_size, 1, 1, 1)
         x_interp = (1 - eps) * x_real + eps * x_fake
