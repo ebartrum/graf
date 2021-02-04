@@ -48,7 +48,6 @@ class BaseGAN(pl.LightningModule):
         if not path.exists(self.out_dir):
             os.makedirs(self.out_dir)
 
-        self.generator_test = self.generator
         self.my_logger = Logger(
             log_dir=path.join(self.out_dir, 'logs'),
             img_dir=path.join(self.out_dir, 'imgs'),
