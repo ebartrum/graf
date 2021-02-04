@@ -21,9 +21,9 @@ from graf.figures import GrafSampleGrid, GrafVideo
 
 from GAN_stability.gan_training import utils
 from GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
-from GAN_stability.gan_training.logger import Logger
 from GAN_stability.gan_training.distributions import get_zdist
 from GAN_stability.gan_training.config import load_config, build_optimizers
+from graf.logger import CustomTensorBoardLogger
 
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
@@ -47,12 +47,6 @@ class BaseGAN(pl.LightningModule):
         self.out_dir = os.path.join(cfg['training']['outdir'], cfg['expname'])
         if not path.exists(self.out_dir):
             os.makedirs(self.out_dir)
-
-        self.my_logger = Logger(
-            log_dir=path.join(self.out_dir, 'logs'),
-            img_dir=path.join(self.out_dir, 'imgs'),
-            monitoring=cfg['training']['monitoring'],
-            monitoring_dir=path.join(self.out_dir, 'monitoring'))
 
         # Learning rate anneling
         d_lr = self.d_optimizer.param_groups[0]['lr']
@@ -82,8 +76,8 @@ class BaseGAN(pl.LightningModule):
         # Discriminator updates
         z = torch.randn(self.cfg['training']['batch_size'], self.cfg['z_dist']['dim'])
         dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs,z=z)
-        self.my_logger.add('losses', 'discriminator', dloss, it=it)
-        self.my_logger.add('losses', 'regularizer', reg, it=it)
+        self.log('discriminator_loss', dloss)
+        self.log('regularizer_loss', reg)
 
         # Generators updates
         if self.cfg['nerf']['decrease_noise']:
@@ -91,7 +85,7 @@ class BaseGAN(pl.LightningModule):
 
         z = torch.randn(self.cfg['training']['batch_size'], self.cfg['z_dist']['dim'])
         gloss = self.gan_trainer.generator_trainstep(z=z)
-        self.my_logger.add('losses', 'generator', gloss, it=it)
+        self.log('generator_loss', gloss)
 
         # Update learning rate
         self.g_scheduler.step()
@@ -100,8 +94,8 @@ class BaseGAN(pl.LightningModule):
         d_lr = self.d_optimizer.param_groups[0]['lr']
         g_lr = self.g_optimizer.param_groups[0]['lr']
 
-        self.my_logger.add('learning_rates', 'discriminator', d_lr, it=it)
-        self.my_logger.add('learning_rates', 'generator', g_lr, it=it)
+        self.log('discriminator_lr', d_lr)
+        self.log('generator_lr', g_lr)
 
     def configure_optimizers(self):
         return ({'optimizer': self.d_optimizer, 'lr_scheduler': self.d_scheduler,
@@ -127,6 +121,8 @@ config = update_config(config, unknown)
 assert(not config['data']['orthographic']), "orthographic not yet supported"
 config['data']['fov'] = float(config['data']['fov'])
 
+tb_logger = CustomTensorBoardLogger('results/',
+        name=config['expname'], default_hp_metric=False)
 model = GRAF(config)
 config['figure_details'] = {'dir': os.path.join(config['training']['outdir'],
     config['expname'], 'figures'), 'filename': None,
@@ -137,5 +133,5 @@ callbacks = [GrafSampleGrid(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None), GrafVideo(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None)]
 pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks,
-        automatic_optimization=False)
+        logger=tb_logger,automatic_optimization=False)
 pl_trainer.fit(model) 
