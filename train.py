@@ -65,10 +65,9 @@ class BaseGAN(pl.LightningModule):
             reg_param=cfg['training']['reg_param'])
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        it = self.global_step
         x_real = batch
         
-        self.generator.ray_sampler.iterations = it   # for scale annealing
+        self.generator.ray_sampler.iterations = self.global_step   # for scale annealing
 
         # Sample patches for real data
         rgbs = self.img_to_patch(x_real.to(self.device))          # N_samples x C
@@ -81,7 +80,7 @@ class BaseGAN(pl.LightningModule):
 
         # Generators updates
         if self.cfg['nerf']['decrease_noise']:
-          self.generator.decrease_nerf_noise(it)
+          self.generator.decrease_nerf_noise(self.global_step)
 
         z = torch.randn(self.cfg['training']['batch_size'], self.cfg['z_dist']['dim'])
         gloss = self.gan_trainer.generator_trainstep(z=z)
