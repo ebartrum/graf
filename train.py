@@ -27,9 +27,7 @@ from GAN_stability.gan_training.config import load_config, build_optimizers
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
-        cfg['data']['fov'] = float(cfg['data']['fov'])
         train_dataset, hwfr, self.render_poses = get_data(cfg)
-        assert(not config['data']['orthographic']), "orthographic not yet supported"
         self.train_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=config['training']['batch_size'],
@@ -152,6 +150,8 @@ parser.add_argument('config', type=str, help='Path to config file.')
 args, unknown = parser.parse_known_args() 
 config = load_config(args.config, 'configs/default.yaml')
 config = update_config(config, unknown)
+assert(not config['data']['orthographic']), "orthographic not yet supported"
+config['data']['fov'] = float(config['data']['fov'])
 
 model = GRAF(config)
 pl_trainer = pl.Trainer(gpus=1, automatic_optimization=False)
