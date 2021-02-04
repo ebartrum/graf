@@ -3,3 +3,4 @@ results
 lightning_logs
 *.submitit*
 data/*
+figures

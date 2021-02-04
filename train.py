@@ -17,6 +17,7 @@ from graf.gan_training import Trainer, Evaluator
 from graf.config import get_data, build_models, save_config, update_config, build_lr_scheduler
 from graf.utils import count_trainable_parameters, get_nsamples
 from graf.transforms import ImgToPatch
+from graf.figures import GrafSampleGrid
 
 from GAN_stability.gan_training import utils
 from GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
@@ -114,13 +115,13 @@ class BaseGAN(pl.LightningModule):
         self.my_logger.add('learning_rates', 'generator', g_lr, it=it)
 
         # (ii) Sample if necessary
-        if ((it % self.cfg['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
-            print("Creating samples...")
-            rgb, depth, acc = self.evaluator.create_samples(
-                    self.ztest, poses=self.ptest)
-            self.my_logger.add_imgs(rgb, 'rgb', it)
-            self.my_logger.add_imgs(depth, 'depth', it)
-            self.my_logger.add_imgs(acc, 'acc', it)
+        # if ((it % self.cfg['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
+        #     print("Creating samples...")
+        #     rgb, depth, acc = self.evaluator.create_samples(
+        #             self.ztest, poses=self.ptest)
+        #     self.my_logger.add_imgs(rgb, 'rgb', it)
+        #     self.my_logger.add_imgs(depth, 'depth', it)
+        #     self.my_logger.add_imgs(acc, 'acc', it)
         # (vi) Create video if necessary
         if ((it+1) % self.cfg['training']['video_every']) == 0:
             N_samples = 4
@@ -154,5 +155,12 @@ assert(not config['data']['orthographic']), "orthographic not yet supported"
 config['data']['fov'] = float(config['data']['fov'])
 
 model = GRAF(config)
-pl_trainer = pl.Trainer(gpus=1, automatic_optimization=False)
+config['figure_details'] = {'dir': 'figures', 'filename': None,
+        'ntest': config['training']['batch_size'],
+        'noise_dim': config['z_dist']['dim']}
+
+callbacks = [GrafSampleGrid(cfg=config['figure_details'],
+    parent_dir='.', pl_module=model, monitor=None)]
+pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks,
+        automatic_optimization=False)
 pl_trainer.fit(model) 
