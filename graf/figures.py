@@ -48,7 +48,7 @@ class Figure(Callback):
 
     @torch.no_grad()
     def on_batch_start(self, trainer, pl_module):
-        if pl_module.global_step % 100 == 0: 
+        if pl_module.global_step % 500 == 0: 
             pl_module.eval()
             self.draw_and_save(pl_module)
             pl_module.train()
@@ -189,3 +189,26 @@ class GrafSampleGrid(Grid):
     def draw_and_save(self, pl_module):
         fig_array = self.draw(pl_module)
         self.save(fig_array, filename=f"{self.filename}".replace(".", f"_{pl_module.global_step}."))
+
+class GrafVideo(Figure):
+    def __init__(self, cfg, parent_dir, pl_module, monitor):
+        super(GrafVideo, self).__init__(cfg, parent_dir, monitor)
+        self.cfg = Namespace(**cfg)
+        self.ntest = self.cfg.ntest
+        self.render_poses = pl_module.render_poses
+        n_samples = 4
+        self.zvid = torch.randn(n_samples, self.cfg.noise_dim)
+        self.ptest = torch.stack([pl_module.generator.sample_pose()\
+                for i in range(self.ntest)])
+        self.evaluator = Evaluator(False,
+                pl_module.generator, noise_dim=self.cfg.noise_dim,
+                batch_size=self.cfg.ntest,
+                inception_nsamples=33)
+
+    @torch.no_grad()
+    def draw_and_save(self, pl_module):
+        filename=f"{self.filename}".replace(".", f"_{pl_module.global_step}.")
+        self.evaluator.make_video(os.path.join(self.save_dir,filename), self.zvid, self.render_poses, as_gif=True)
+
+    def draw(self, pl_module):
+        pass

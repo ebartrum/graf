@@ -17,7 +17,7 @@ from graf.gan_training import Trainer, Evaluator
 from graf.config import get_data, build_models, save_config, update_config, build_lr_scheduler
 from graf.utils import count_trainable_parameters, get_nsamples
 from graf.transforms import ImgToPatch
-from graf.figures import GrafSampleGrid
+from graf.figures import GrafSampleGrid, GrafVideo
 
 from GAN_stability.gan_training import utils
 from GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
@@ -114,13 +114,6 @@ class BaseGAN(pl.LightningModule):
         self.my_logger.add('learning_rates', 'discriminator', d_lr, it=it)
         self.my_logger.add('learning_rates', 'generator', g_lr, it=it)
 
-        if ((it+1) % self.cfg['training']['video_every']) == 0:
-            N_samples = 4
-            zvid = torch.randn(N_samples, self.cfg['z_dist']['dim'])
-
-            basename = os.path.join(self.out_dir, '{}_{:06d}_'.format(os.path.basename(self.cfg['expname']), it))
-            self.evaluator.make_video(basename, zvid, self.render_poses, as_gif=True)
-
     def configure_optimizers(self):
         return ({'optimizer': self.d_optimizer, 'lr_scheduler': self.d_scheduler,
                     'frequency': 1},
@@ -152,6 +145,7 @@ config['figure_details'] = {'dir': os.path.join(config['training']['outdir'],
         'noise_dim': config['z_dist']['dim']}
 
 callbacks = [GrafSampleGrid(cfg=config['figure_details'],
+    parent_dir='.', pl_module=model, monitor=None), GrafVideo(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None)]
 pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks,
         automatic_optimization=False)
