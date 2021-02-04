@@ -47,18 +47,8 @@ class BaseGAN(pl.LightningModule):
         self.out_dir = os.path.join(cfg['training']['outdir'], cfg['expname'])
         if not path.exists(self.out_dir):
             os.makedirs(self.out_dir)
-        # Save for tests
-        n_test_samples_with_same_shape_code = cfg['training']['n_test_samples_with_same_shape_code']
-        ntest = cfg['training']['batch_size']
-        x_real = get_nsamples(self.train_loader, ntest)
-        self.ztest = torch.randn(ntest, cfg['z_dist']['dim'])
-        self.ptest = torch.stack([self.generator.sample_pose() for i in range(ntest)])
 
         self.generator_test = self.generator
-        self.evaluator = Evaluator(cfg['training']['fid_every'] > 0,
-                self.generator_test, noise_dim=cfg['z_dist']['dim'],
-                batch_size=cfg['training']['batch_size'],
-                inception_nsamples=33)
         self.my_logger = Logger(
             log_dir=path.join(self.out_dir, 'logs'),
             img_dir=path.join(self.out_dir, 'imgs'),
