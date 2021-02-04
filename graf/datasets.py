@@ -11,10 +11,11 @@ class ImageDataset(VisionDataset):
     Folder structure: data_dir/filename.png
     """
 
-    def __init__(self, data_dirs, transforms=None, white_alpha_bg=False):
+    def __init__(self, data_dirs, mask_dir=None, transforms=None, white_alpha_bg=False):
         # Use multiple root folders
         if not isinstance(data_dirs, list):
             data_dirs = [data_dirs]
+        self.mask_dir = mask_dir
         
         # initialize base class
         VisionDataset.__init__(self, root=data_dirs, transform=transforms)
@@ -33,11 +34,18 @@ class ImageDataset(VisionDataset):
 
     @staticmethod
     def _get_files(root_dir):
-        return glob.glob(f'{root_dir}/*.png') + glob.glob(f'{root_dir}/*.jpg')
+        return glob.glob(f'{root_dir}/*.png') + glob.glob(f'{root_dir}/*.jpg') + glob.glob(f'{root_dir}/*.gif')
 
     def __getitem__(self, idx):
         filename = self.filenames[idx]
         img = Image.open(filename)
+        if self.mask_dir:
+            mask_filename_tail = "/".join(filename.split("/")[-2:]).replace("jpg","gif")
+            mask_filename = "/".join([self.mask_dir, mask_filename_tail])
+            mask = Image.open(mask_filename).convert("L")
+            img.putalpha(mask)
+            bg = Image.new(img.mode, (img.width, img.height), (255, 255, 255))
+            img = Image.alpha_composite(bg, img)
         if self.white_alpha_bg:
             bg = Image.new(img.mode, (img.width, img.height), (255, 255, 255))
             img = Image.alpha_composite(bg, img)
@@ -45,7 +53,6 @@ class ImageDataset(VisionDataset):
         if self.transform is not None:
             img = self.transform(img)
         return img
-
 
 class Carla(ImageDataset):
     def __init__(self, *args, **kwargs):

@@ -1,6 +1,7 @@
 expname: devel_cars
 data:
   datadir: /home/ed/datasets/kaggle_cars/train
+  maskdir: /home/ed/datasets/kaggle_cars/train_masks
   type: image_folder
   imsize: 32
   white_bkgd: False
