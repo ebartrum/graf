@@ -114,15 +114,6 @@ class BaseGAN(pl.LightningModule):
         self.my_logger.add('learning_rates', 'discriminator', d_lr, it=it)
         self.my_logger.add('learning_rates', 'generator', g_lr, it=it)
 
-        # (ii) Sample if necessary
-        # if ((it % self.cfg['training']['sample_every']) == 0) or ((it < 500) and (it % 100 == 0)):
-        #     print("Creating samples...")
-        #     rgb, depth, acc = self.evaluator.create_samples(
-        #             self.ztest, poses=self.ptest)
-        #     self.my_logger.add_imgs(rgb, 'rgb', it)
-        #     self.my_logger.add_imgs(depth, 'depth', it)
-        #     self.my_logger.add_imgs(acc, 'acc', it)
-        # (vi) Create video if necessary
         if ((it+1) % self.cfg['training']['video_every']) == 0:
             N_samples = 4
             zvid = torch.randn(N_samples, self.cfg['z_dist']['dim'])
