@@ -155,7 +155,8 @@ assert(not config['data']['orthographic']), "orthographic not yet supported"
 config['data']['fov'] = float(config['data']['fov'])
 
 model = GRAF(config)
-config['figure_details'] = {'dir': 'figures', 'filename': None,
+config['figure_details'] = {'dir': os.path.join(config['training']['outdir'],
+    config['expname'], 'figures'), 'filename': None,
         'ntest': 8,
         'noise_dim': config['z_dist']['dim']}
 
