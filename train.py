@@ -24,6 +24,7 @@ from GAN_stability.gan_training.train import update_average, toggle_grad, comput
 from GAN_stability.gan_training.distributions import get_zdist
 from GAN_stability.gan_training.config import load_config, build_optimizers
 from graf.logger import CustomTensorBoardLogger
+from graf import training_step
 
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
@@ -65,36 +66,7 @@ class BaseGAN(pl.LightningModule):
             reg_param=cfg['training']['reg_param'])
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        x_real = batch
-        
-        self.generator.ray_sampler.iterations = self.global_step   # for scale annealing
-
-        # Sample patches for real data
-        rgbs = self.img_to_patch(x_real.to(self.device))          # N_samples x C
-
-        # Discriminator updates
-        z = torch.randn(self.cfg['training']['batch_size'], self.cfg['z_dist']['dim'])
-        dloss, reg = self.gan_trainer.discriminator_trainstep(rgbs,z=z)
-        self.log('discriminator_loss', dloss)
-        self.log('regularizer_loss', reg)
-
-        # Generators updates
-        if self.cfg['nerf']['decrease_noise']:
-          self.generator.decrease_nerf_noise(self.global_step)
-
-        z = torch.randn(self.cfg['training']['batch_size'], self.cfg['z_dist']['dim'])
-        gloss = self.gan_trainer.generator_trainstep(z=z)
-        self.log('generator_loss', gloss)
-
-        # Update learning rate
-        self.g_scheduler.step()
-        self.d_scheduler.step()
-
-        d_lr = self.d_optimizer.param_groups[0]['lr']
-        g_lr = self.g_optimizer.param_groups[0]['lr']
-
-        self.log('discriminator_lr', d_lr)
-        self.log('generator_lr', g_lr)
+        return training_step.graf(self, batch, batch_idx, optimizer_idx)
 
     def configure_optimizers(self):
         return ({'optimizer': self.d_optimizer, 'lr_scheduler': self.d_scheduler,
