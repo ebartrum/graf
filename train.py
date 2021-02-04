@@ -156,7 +156,7 @@ config['data']['fov'] = float(config['data']['fov'])
 
 model = GRAF(config)
 config['figure_details'] = {'dir': 'figures', 'filename': None,
-        'ntest': config['training']['batch_size'],
+        'ntest': 8,
         'noise_dim': config['z_dist']['dim']}
 
 callbacks = [GrafSampleGrid(cfg=config['figure_details'],
