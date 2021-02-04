@@ -124,8 +124,8 @@ config['data']['fov'] = float(config['data']['fov'])
 tb_logger = CustomTensorBoardLogger('results/',
         name=config['expname'], default_hp_metric=False)
 model = GRAF(config)
-config['figure_details'] = {'dir': os.path.join(config['training']['outdir'],
-    config['expname'], 'figures'), 'filename': None,
+config['figure_details'] = {'dir': os.path.join(tb_logger.log_dir,'figures'),
+        'filename': None,
         'ntest': 8,
         'noise_dim': config['z_dist']['dim']}
 
