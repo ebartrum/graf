@@ -33,39 +33,39 @@ class BaseGAN(pl.LightningModule):
         self.cfg = cfg
         self.generator, self.discriminator = build_models(cfg)
 
-        optimizer = config['training']['optimizer']
-        lr_g = config['training']['lr_g']
-        lr_d = config['training']['lr_d']
+        optimizer = cfg['training']['optimizer']
+        lr_g = cfg['training']['lr_g']
+        lr_d = cfg['training']['lr_d']
         g_params = self.generator.parameters()
         d_params = self.discriminator.parameters()
 
         self.g_optimizer = optim.RMSprop(g_params, lr=lr_g, alpha=0.99, eps=1e-8)
         self.d_optimizer = optim.RMSprop(d_params, lr=lr_d, alpha=0.99, eps=1e-8)
 
-        step_size = config['training']['lr_anneal_every']
+        step_size = cfg['training']['lr_anneal_every']
         if isinstance(step_size, str):
             milestones = [int(m) for m in step_size.split(',')]
             self.g_scheduler = optim.lr_scheduler.MultiStepLR(
                 self.g_optimizer,
                 milestones=milestones,
-                gamma=config['training']['lr_anneal'],
+                gamma=cfg['training']['lr_anneal'],
                 last_epoch=-1)
             self.d_scheduler = optim.lr_scheduler.MultiStepLR(
                 self.d_optimizer,
                 milestones=milestones,
-                gamma=config['training']['lr_anneal'],
+                gamma=cfg['training']['lr_anneal'],
                 last_epoch=-1)
         else:
             self.g_scheduler = optim.lr_scheduler.StepLR(
                 self.g_optimizer,
                 step_size=step_size,
-                gamma=config['training']['lr_anneal'],
+                gamma=cfg['training']['lr_anneal'],
                 last_epoch=-1
             )
             self.d_scheduler = optim.lr_scheduler.StepLR(
                 self.g_optimizer,
                 step_size=step_size,
-                gamma=config['training']['lr_anneal'],
+                gamma=cfg['training']['lr_anneal'],
                 last_epoch=-1
             )
 
