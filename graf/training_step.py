@@ -63,10 +63,6 @@ def graf_discriminator_trainstep(pl_module, x_real, z):
     d_real = pl_module.discriminator(x_real)
     dloss_real = compute_loss(d_real, 1)
 
-    dloss_real.backward(retain_graph=True)
-    reg = pl_module.reg_param * compute_grad2(d_real, x_real).mean()
-    reg.backward()
-
     # On fake data
     with torch.no_grad():
         x_fake = pl_module.generator(z)
@@ -74,29 +70,24 @@ def graf_discriminator_trainstep(pl_module, x_real, z):
     x_fake.requires_grad_()
     d_fake = pl_module.discriminator(x_fake)
     dloss_fake = compute_loss(d_fake, 0)
-
-    dloss_fake.backward()
+    dloss = (dloss_real + dloss_fake)
+    r1_reg = pl_module.reg_param * compute_grad2(d_real, x_real).mean()
+    
+    total_loss = r1_reg + dloss
+    total_loss.backward()
 
     pl_module.d_optimizer.step()
 
     toggle_grad(pl_module.discriminator, False)
 
-    # Output
-    dloss = (dloss_real + dloss_fake)
-
-    return dloss.item(), reg.item()
+    return dloss.item(), r1_reg.item()
 
 def compute_loss(d_outs, target):
-
     d_outs = [d_outs] if not isinstance(d_outs, list) else d_outs
     loss = 0
-
     for d_out in d_outs:
-
         targets = d_out.new_full(size=d_out.size(), fill_value=target)
-
         loss += F.binary_cross_entropy_with_logits(d_out, targets)
-
     return loss / len(d_outs)
 
 def compute_grad2(d_outs, x_in):
