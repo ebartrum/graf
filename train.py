@@ -29,11 +29,6 @@ from graf import training_step
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
-        train_dataset = get_dataset(cfg)
-        self.train_loader = torch.utils.data.DataLoader(
-            train_dataset,
-            batch_size=config['training']['batch_size'],
-            shuffle=True, pin_memory=True, sampler=None, drop_last=True)
 
         self.cfg = cfg
         self.generator, self.discriminator = build_models(cfg)
@@ -59,7 +54,11 @@ class BaseGAN(pl.LightningModule):
                    'frequency': 1})
 
     def train_dataloader(self):
-        return self.train_loader
+        train_dataset = get_dataset(self.cfg)
+        return torch.utils.data.DataLoader(
+            train_dataset,
+            batch_size=config['training']['batch_size'],
+            shuffle=True, pin_memory=True, sampler=None, drop_last=True)
 
 class GRAF(BaseGAN):
     def __init__(self, cfg):
