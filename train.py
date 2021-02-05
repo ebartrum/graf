@@ -30,14 +30,12 @@ class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
         train_dataset = get_dataset(cfg)
-        hwfr= get_hwfr(cfg)
         self.render_poses = compute_render_poses(cfg)
         self.train_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=config['training']['batch_size'],
             shuffle=True, pin_memory=True, sampler=None, drop_last=True)
 
-        cfg['data']['hwfr'] = hwfr         # add for building generator
         self.cfg = cfg
         self.generator, self.discriminator = build_models(cfg)
         self.g_optimizer, self.d_optimizer = build_optimizers(
@@ -67,7 +65,9 @@ class BaseGAN(pl.LightningModule):
 class GRAF(BaseGAN):
     def __init__(self, cfg):
         super().__init__(cfg)
-        self.img_to_patch = ImgToPatch(self.generator.ray_sampler, cfg['data']['hwfr'][:3])
+        hwfr = get_hwfr(cfg)
+        self.img_to_patch = ImgToPatch(self.generator.ray_sampler,
+                hwfr[:3])
         self.reg_param = cfg['training']['reg_param']
 
 parser = argparse.ArgumentParser(

@@ -157,7 +157,7 @@ def build_models(config, disc=True):
                                      scale_anneal=config['ray_sampler']['scale_anneal'],
                                      orthographic=config['data']['orthographic'])
 
-    H, W, f, r = config['data']['hwfr']
+    H, W, f, r = get_hwfr(config)
     generator = Generator(H, W, f, r,
                           ray_sampler=ray_sampler,
                           render_kwargs_train=render_kwargs_train, render_kwargs_test=render_kwargs_test,
