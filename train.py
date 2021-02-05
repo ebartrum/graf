@@ -45,10 +45,6 @@ class BaseGAN(pl.LightningModule):
         self.g_optimizer, self.d_optimizer = build_optimizers(
                 self.generator, self.discriminator, cfg)
 
-        self.out_dir = os.path.join(cfg['training']['outdir'], cfg['expname'])
-        if not path.exists(self.out_dir):
-            os.makedirs(self.out_dir)
-
         # Learning rate anneling
         d_lr = self.d_optimizer.param_groups[0]['lr']
         g_lr = self.g_optimizer.param_groups[0]['lr']
