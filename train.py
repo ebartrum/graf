@@ -14,7 +14,7 @@ import sys
 sys.path.append('submodules')        # needed to make imports work in GAN_stability
 
 from graf.gan_training import Trainer, Evaluator
-from graf.config import get_data, build_models, save_config, update_config, build_lr_scheduler, compute_render_poses
+from graf.config import get_dataset, get_hwfr, build_models, save_config, update_config, build_lr_scheduler, compute_render_poses
 from graf.utils import count_trainable_parameters, get_nsamples
 from graf.transforms import ImgToPatch
 from graf.figures import GrafSampleGrid, GrafVideo
@@ -29,7 +29,8 @@ from graf import training_step
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
-        train_dataset, hwfr= get_data(cfg)
+        train_dataset = get_dataset(cfg)
+        hwfr= get_hwfr(cfg)
         self.render_poses = compute_render_poses(cfg)
         self.train_loader = torch.utils.data.DataLoader(
             train_dataset,

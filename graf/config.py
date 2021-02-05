@@ -38,8 +38,7 @@ def update_config(config, unknown):
 
     return config
 
-
-def get_data(config):
+def get_dataset(config):
     H = W = imsize = config['data']['imsize']
     dset_type = config['data']['type']
     fov = config['data']['fov']
@@ -90,13 +89,20 @@ def get_data(config):
     dset.H = dset.W = imsize
     dset.focal = W/2 * 1 / np.tan((.5 * fov * np.pi/180.))
     radius = config['data']['radius']
-    render_radius = radius
     if isinstance(radius, str):
         radius = tuple(float(r) for r in radius.split(','))
-        render_radius = max(radius)
     dset.radius = radius
-    print('Loaded {}'.format(dset_type), imsize, len(dset), [H,W,dset.focal,dset.radius], config['data']['datadir'])
-    return dset, [H,W,dset.focal,dset.radius]
+    print('Loaded {}'.format(dset_type), imsize, len(dset), config['data']['datadir'])
+    return dset
+
+def get_hwfr(config):
+    H = W = config['data']['imsize']
+    fov = config['data']['fov']
+    focal = W/2 * 1 / np.tan((.5 * fov * np.pi/180.))
+    radius = config['data']['radius']
+    if isinstance(radius, str):
+        radius = tuple(float(r) for r in radius.split(','))
+    return [H,W,focal,radius]
 
 def compute_render_poses(config):
     N = 40
