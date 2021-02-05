@@ -1,13 +1,15 @@
 import numpy as np
 import torch
+from torch import nn
 from ..utils import sample_on_sphere, look_at, to_sphere
 from ..transforms import FullRaySampler
 from submodules.nerf_pytorch.run_nerf_mod import render, run_network            # import conditional render
 from functools import partial
 
-class Generator():
+class Generator(nn.Module):
     def __init__(self, H, W, focal, radius, ray_sampler, render_kwargs_train, render_kwargs_test, parameters, named_parameters,
                  range_u=(0,1), range_v=(0.01,0.49), chunk=None, device='cuda', orthographic=False):
+        super(Generator, self).__init__()
         self.device = device
         self.H = int(H)
         self.W = int(W)
@@ -23,27 +25,32 @@ class Generator():
         self.val_ray_sampler = FullRaySampler(orthographic=orthographic)
         self.render_kwargs_train = render_kwargs_train
         self.render_kwargs_test = render_kwargs_test
+        self.train_net = render_kwargs_train.pop('network_fn')
+        self.train_net_fine = render_kwargs_train.pop('network_fine')
+        self.test_net = render_kwargs_test.pop('network_fn')
+        self.test_net_fine = render_kwargs_test.pop('network_fine')
         self.initial_raw_noise_std = self.render_kwargs_train['raw_noise_std']
-        self._parameters = parameters
-        self._named_parameters = named_parameters
-        self.module_dict = {'generator': self.render_kwargs_train['network_fn']}
-        for name, module in [('generator_fine', self.render_kwargs_train['network_fine'])]:
-            if module is not None:
-                self.module_dict[name] = module
+        # self._parameters = parameters
+        # self._named_parameters = named_parameters
+        # self.module_dict = {'generator': self.render_kwargs_train['network_fn']}
+        # for name, module in [('generator_fine', self.render_kwargs_train['network_fine'])]:
+        #     if module is not None:
+        #         self.module_dict[name] = module
         
-        for k, v in self.module_dict.items():
-            if k in ['generator', 'generator_fine']:
-                continue       # parameters already included
-            self._parameters += list(v.parameters())
-            self._named_parameters += list(v.named_parameters())
+        # for k, v in self.module_dict.items():
+        #     if k in ['generator', 'generator_fine']:
+        #         continue       # parameters already included
+            # self._parameters += list(v.parameters())
+            # self._named_parameters += list(v.named_parameters())
         
-        self.parameters = lambda: self._parameters           # save as function to enable calling model.parameters()
-        self.named_parameters = lambda: self._named_parameters           # save as function to enable calling model.named_parameters()
+        # self.parameters = lambda: self._parameters           # save as function to enable calling model.parameters()
+        # self.named_parameters = lambda: self._named_parameters           # save as function to enable calling model.named_parameters()
         self.use_test_kwargs = False
 
         self.render = partial(render, H=self.H, W=self.W, focal=self.focal, chunk=self.chunk)
 
-    def __call__(self, z, y=None, rays=None):
+    def forward(self, z, y=None, rays=None):
+        self.use_test_kwargs = not self.training
         bs = z.shape[0]
         if rays is None:
             rays = torch.cat([self.sample_rays() for _ in range(bs)], dim=1)
@@ -68,8 +75,11 @@ class Generator():
             
 
         render_kwargs['features'] = z
-        rgb, disp, acc, extras = render(self.H, self.W, self.focal, chunk=self.chunk, rays=rays,
-                                        **render_kwargs)
+        net, net_fine = (self.test_net, self.test_net_fine) if\
+                self.use_test_kwargs else (self.train_net, self.train_net_fine)
+        rgb, disp, acc, extras = render(self.H, self.W, self.focal,
+                chunk=self.chunk, rays=rays, network_fn=net,
+                network_fine=net_fine, **render_kwargs)
 
         rays_to_output = lambda x: x.view(len(x), -1) * 2 - 1      # (BxN_samples)xC
     
@@ -109,21 +119,21 @@ class Generator():
         batch_rays, _, _ = sampler(self.H, self.W, self.focal, pose)
         return batch_rays
 
-    def to(self, device):
-        self.render_kwargs_train['network_fn'].to(device)
-        if self.render_kwargs_train['network_fine'] is not None:
-            self.render_kwargs_train['network_fine'].to(device)
-        self.device = device
-        return self
+    # def to(self, device):
+    #     self.render_kwargs_train['network_fn'].to(device)
+    #     if self.render_kwargs_train['network_fine'] is not None:
+    #         self.render_kwargs_train['network_fine'].to(device)
+    #     self.device = device
+    #     return self
 
-    def train(self):
-        self.use_test_kwargs = False
-        self.render_kwargs_train['network_fn'].train()
-        if self.render_kwargs_train['network_fine'] is not None:
-            self.render_kwargs_train['network_fine'].train()
+    # def train(self):
+    #     self.use_test_kwargs = False
+    #     self.render_kwargs_train['network_fn'].train()
+    #     if self.render_kwargs_train['network_fine'] is not None:
+    #         self.render_kwargs_train['network_fine'].train()
 
-    def eval(self):
-        self.use_test_kwargs = True
-        self.render_kwargs_train['network_fn'].eval()
-        if self.render_kwargs_train['network_fine'] is not None:
-            self.render_kwargs_train['network_fine'].eval()
+    # def eval(self):
+    #     self.use_test_kwargs = True
+    #     self.render_kwargs_train['network_fn'].eval()
+    #     if self.render_kwargs_train['network_fine'] is not None:
+    #         self.render_kwargs_train['network_fine'].eval()
