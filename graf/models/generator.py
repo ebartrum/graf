@@ -7,8 +7,10 @@ from submodules.nerf_pytorch.run_nerf_mod import render, run_network
 from functools import partial
 
 class Generator(nn.Module):
-    def __init__(self, H, W, focal, radius, ray_sampler, render_kwargs_train, render_kwargs_test, parameters, named_parameters,
-                 range_u=(0,1), range_v=(0.01,0.49), chunk=None, device='cuda', orthographic=False):
+    def __init__(self, H, W, focal, radius, ray_sampler, render_kwargs_train,
+            render_kwargs_test, parameters, named_parameters,
+                 range_u=(0,1), range_v=(0.01,0.49), chunk=None,
+                 device='cuda', orthographic=False):
         super(Generator, self).__init__()
         self.device = device
         self.H = int(H)
