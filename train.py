@@ -58,13 +58,6 @@ class BaseGAN(pl.LightningModule):
         self.d_optimizer.param_groups[0]['lr'] = d_lr
         self.g_optimizer.param_groups[0]['lr'] = g_lr
 
-        self.gan_trainer = Trainer(
-            self.generator, self.discriminator, self.g_optimizer,
-            self.d_optimizer, use_amp=cfg['training']['use_amp'],
-            gan_type=cfg['training']['gan_type'],
-            reg_type=cfg['training']['reg_type'],
-            reg_param=cfg['training']['reg_param'])
-
     def training_step(self, batch, batch_idx, optimizer_idx):
         return training_step.graf(self, batch, batch_idx, optimizer_idx)
 
@@ -81,6 +74,7 @@ class GRAF(BaseGAN):
     def __init__(self, cfg):
         super().__init__(cfg)
         self.img_to_patch = ImgToPatch(self.generator.ray_sampler, cfg['data']['hwfr'][:3])
+        self.reg_param = cfg['training']['reg_param']
 
 parser = argparse.ArgumentParser(
     description='Train a GAN with different regularization strategies.'
