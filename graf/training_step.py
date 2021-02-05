@@ -5,61 +5,30 @@ from torch import autograd
 def graf(pl_module, batch, batch_idx, optimizer_idx):
     x_real = batch
     
-    pl_module.generator.ray_sampler.iterations = pl_module.global_step   # for scale annealing
+    pl_module.generator.ray_sampler.iterations = pl_module.global_step//2   # for scale annealing
 
     # Sample patches for real data
     rgbs = pl_module.img_to_patch(x_real.to(pl_module.device))          # N_samples x C
-
-    # Discriminator updates
     z = torch.randn(pl_module.cfg['training']['batch_size'], pl_module.cfg['z_dist']['dim'])
-    dloss, reg = graf_discriminator_trainstep(pl_module, rgbs,z=z)
-    pl_module.log('discriminator_loss', dloss)
-    pl_module.log('regularizer_loss', reg)
 
-    # Generators updates
-    if pl_module.cfg['nerf']['decrease_noise']:
-      pl_module.generator.decrease_nerf_noise(pl_module.global_step)
-
-    z = torch.randn(pl_module.cfg['training']['batch_size'], pl_module.cfg['z_dist']['dim'])
-    gloss = graf_generator_trainstep(pl_module, z=z)
-    pl_module.log('generator_loss', gloss)
-
-    # Update learning rate
-    pl_module.g_scheduler.step()
-    pl_module.d_scheduler.step()
-
-    d_lr = pl_module.d_optimizer.param_groups[0]['lr']
-    g_lr = pl_module.g_optimizer.param_groups[0]['lr']
-
-    pl_module.log('discriminator_lr', d_lr)
-    pl_module.log('generator_lr', g_lr)
+    if optimizer_idx == 0:
+        return graf_discriminator_trainstep(pl_module, rgbs,z=z)
+    if optimizer_idx == 1:
+        return graf_generator_trainstep(pl_module, z=z)
 
 def graf_generator_trainstep(pl_module, z):
-    toggle_grad(pl_module.generator, True)
-    toggle_grad(pl_module.discriminator, False)
-    pl_module.generator.train()
-    pl_module.discriminator.train()
-    pl_module.g_optimizer.zero_grad()
+    if pl_module.cfg['nerf']['decrease_noise']:
+      pl_module.generator.decrease_nerf_noise(pl_module.global_step//2)
 
     x_fake = pl_module.generator(z)
     d_fake = pl_module.discriminator(x_fake)
     gloss = compute_loss(d_fake, 1)
-    gloss.backward()
-
-    pl_module.g_optimizer.step()
-
-    return gloss.item()
+    pl_module.log('generator_loss', gloss)
+    return gloss
 
 def graf_discriminator_trainstep(pl_module, x_real, z):
-    toggle_grad(pl_module.generator, False)
-    toggle_grad(pl_module.discriminator, True)
-    pl_module.generator.train()
-    pl_module.discriminator.train()
-    pl_module.d_optimizer.zero_grad()
-
     # On real data
     x_real.requires_grad_()
-
     d_real = pl_module.discriminator(x_real)
     dloss_real = compute_loss(d_real, 1)
 
@@ -72,15 +41,10 @@ def graf_discriminator_trainstep(pl_module, x_real, z):
     dloss_fake = compute_loss(d_fake, 0)
     dloss = (dloss_real + dloss_fake)
     r1_reg = pl_module.reg_param * compute_grad2(d_real, x_real).mean()
-    
-    total_loss = r1_reg + dloss
-    total_loss.backward()
+    pl_module.log('discriminator_loss', dloss)
+    pl_module.log('regularizer_loss', r1_reg)
 
-    pl_module.d_optimizer.step()
-
-    toggle_grad(pl_module.discriminator, False)
-
-    return dloss.item(), r1_reg.item()
+    return r1_reg + dloss
 
 def compute_loss(d_outs, target):
     d_outs = [d_outs] if not isinstance(d_outs, list) else d_outs

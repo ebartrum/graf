@@ -32,8 +32,6 @@ class BaseGAN(pl.LightningModule):
         super().__init__()
         self.cfg = cfg
         self.generator, self.discriminator = build_models(cfg)
-        self.g_optimizer, self.d_optimizer = build_optimizers(
-                self.generator, self.discriminator, cfg)
 
         optimizer = config['training']['optimizer']
         lr_g = config['training']['lr_g']
@@ -75,9 +73,18 @@ class BaseGAN(pl.LightningModule):
         return training_step.graf(self, batch, batch_idx, optimizer_idx)
 
     def configure_optimizers(self):
-        return ({'optimizer': self.d_optimizer, 'lr_scheduler': self.d_scheduler,
+        g_optimizer, d_optimizer = build_optimizers(
+                self.generator, self.discriminator, self.cfg)
+        d_lr = d_optimizer.param_groups[0]['lr']
+        g_lr = g_optimizer.param_groups[0]['lr']
+        g_scheduler = build_lr_scheduler(g_optimizer, self.cfg, last_epoch=-1)
+        d_scheduler = build_lr_scheduler(d_optimizer, self.cfg, last_epoch=-1)
+        d_optimizer.param_groups[0]['lr'] = d_lr
+        g_optimizer.param_groups[0]['lr'] = g_lr
+
+        return ({'optimizer': d_optimizer, 'lr_scheduler': d_scheduler,
                     'frequency': 1},
-               {'optimizer': self.g_optimizer, 'lr_scheduler': self.g_scheduler,
+               {'optimizer': g_optimizer, 'lr_scheduler': g_scheduler,
                    'frequency': 1})
 
     def train_dataloader(self):
@@ -117,6 +124,5 @@ config['figure_details'] = {'dir': os.path.join(tb_logger.log_dir,'figures'),
 callbacks = [GrafSampleGrid(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None), GrafVideo(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None)]
-pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks,
-        logger=tb_logger,automatic_optimization=False)
+pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks, logger=tb_logger)
 pl_trainer.fit(model) 
