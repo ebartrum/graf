@@ -95,16 +95,19 @@ def get_data(config):
         radius = tuple(float(r) for r in radius.split(','))
         render_radius = max(radius)
     dset.radius = radius
+    print('Loaded {}'.format(dset_type), imsize, len(dset), [H,W,dset.focal,dset.radius], config['data']['datadir'])
+    return dset, [H,W,dset.focal,dset.radius]
 
-    # compute render poses
+def compute_render_poses(config):
     N = 40
+    radius = config['data']['radius']
+    render_radius = radius
+    if isinstance(radius, str):
+        radius = tuple(float(r) for r in radius.split(','))
+        render_radius = max(radius)
     theta = 0.5 * (to_theta(config['data']['vmin']) + to_theta(config['data']['vmax']))
     angle_range = (to_phi(config['data']['umin']), to_phi(config['data']['umax']))
-    render_poses = get_render_poses(render_radius, angle_range=angle_range, theta=theta, N=N)
-
-    print('Loaded {}'.format(dset_type), imsize, len(dset), render_poses.shape, [H,W,dset.focal,dset.radius], config['data']['datadir'])
-    return dset, [H,W,dset.focal,dset.radius], render_poses
-
+    return get_render_poses(render_radius, angle_range=angle_range, theta=theta, N=N)
 
 def get_render_poses(radius, angle_range=(0, 360), theta=0, N=40, swap_angles=False):
     poses = []
