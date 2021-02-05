@@ -30,7 +30,6 @@ class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
         train_dataset = get_dataset(cfg)
-        self.render_poses = compute_render_poses(cfg)
         self.train_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=config['training']['batch_size'],
@@ -86,7 +85,8 @@ model = GRAF(config)
 config['figure_details'] = {'dir': os.path.join(tb_logger.log_dir,'figures'),
         'filename': None,
         'ntest': 8,
-        'noise_dim': config['z_dist']['dim']}
+        'noise_dim': config['z_dist']['dim'],
+        'data': config['data']}
 
 callbacks = [GrafSampleGrid(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None), GrafVideo(cfg=config['figure_details'],

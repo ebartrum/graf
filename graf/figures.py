@@ -13,6 +13,7 @@ from copy import deepcopy
 from tqdm import tqdm
 from argparse import Namespace
 from graf.gan_training import Evaluator
+from graf.config import compute_render_poses
 
 class Figure(Callback):
     def __init__(self, cfg, parent_dir, pl_module=None, monitor=None):
@@ -195,7 +196,7 @@ class GrafVideo(Figure):
         super(GrafVideo, self).__init__(cfg, parent_dir, monitor)
         self.cfg = Namespace(**cfg)
         self.ntest = self.cfg.ntest
-        self.render_poses = pl_module.render_poses
+        self.render_poses = compute_render_poses(cfg)
         n_samples = 4
         self.zvid = torch.randn(n_samples, self.cfg.noise_dim)
         self.ptest = torch.stack([pl_module.generator.sample_pose()\
