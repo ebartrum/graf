@@ -90,7 +90,6 @@ config['figure_details'] = {'dir': os.path.join(tb_logger.log_dir,'figures'),
 callbacks = [GrafSampleGrid(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None), GrafVideo(cfg=config['figure_details'],
     parent_dir='.', pl_module=model, monitor=None)]
-callbacks = []
 pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks,
         logger=tb_logger,automatic_optimization=False)
 pl_trainer.fit(model) 
