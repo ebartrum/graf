@@ -25,24 +25,51 @@ from GAN_stability.gan_training.distributions import get_zdist
 from GAN_stability.gan_training.config import load_config, build_optimizers
 from graf.logger import CustomTensorBoardLogger
 from graf import training_step
+import torch.optim as optim
 
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
-
         self.cfg = cfg
         self.generator, self.discriminator = build_models(cfg)
         self.g_optimizer, self.d_optimizer = build_optimizers(
                 self.generator, self.discriminator, cfg)
 
-        # Learning rate anneling
-        d_lr = self.d_optimizer.param_groups[0]['lr']
-        g_lr = self.g_optimizer.param_groups[0]['lr']
-        self.g_scheduler = build_lr_scheduler(self.g_optimizer, cfg, last_epoch=-1)
-        self.d_scheduler = build_lr_scheduler(self.d_optimizer, cfg, last_epoch=-1)
-        # ensure lr is not decreased again
-        self.d_optimizer.param_groups[0]['lr'] = d_lr
-        self.g_optimizer.param_groups[0]['lr'] = g_lr
+        optimizer = config['training']['optimizer']
+        lr_g = config['training']['lr_g']
+        lr_d = config['training']['lr_d']
+        g_params = self.generator.parameters()
+        d_params = self.discriminator.parameters()
+
+        self.g_optimizer = optim.RMSprop(g_params, lr=lr_g, alpha=0.99, eps=1e-8)
+        self.d_optimizer = optim.RMSprop(d_params, lr=lr_d, alpha=0.99, eps=1e-8)
+
+        step_size = config['training']['lr_anneal_every']
+        if isinstance(step_size, str):
+            milestones = [int(m) for m in step_size.split(',')]
+            self.g_scheduler = optim.lr_scheduler.MultiStepLR(
+                self.g_optimizer,
+                milestones=milestones,
+                gamma=config['training']['lr_anneal'],
+                last_epoch=-1)
+            self.d_scheduler = optim.lr_scheduler.MultiStepLR(
+                self.d_optimizer,
+                milestones=milestones,
+                gamma=config['training']['lr_anneal'],
+                last_epoch=-1)
+        else:
+            self.g_scheduler = optim.lr_scheduler.StepLR(
+                self.g_optimizer,
+                step_size=step_size,
+                gamma=config['training']['lr_anneal'],
+                last_epoch=-1
+            )
+            self.d_scheduler = optim.lr_scheduler.StepLR(
+                self.g_optimizer,
+                step_size=step_size,
+                gamma=config['training']['lr_anneal'],
+                last_epoch=-1
+            )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         return training_step.graf(self, batch, batch_idx, optimizer_idx)
