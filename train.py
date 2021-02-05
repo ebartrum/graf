@@ -35,10 +35,6 @@ class BaseGAN(pl.LightningModule):
             batch_size=config['training']['batch_size'],
             shuffle=True, pin_memory=True, sampler=None, drop_last=True)
 
-        val_dataset = train_dataset
-        val_loader = self.train_loader
-        hwfr_val = hwfr
-
         cfg['data']['hwfr'] = hwfr         # add for building generator
         self.cfg = cfg
         self.generator, self.discriminator = build_models(cfg)
