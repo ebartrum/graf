@@ -75,7 +75,6 @@ training:
   gan_type: standard
   reg_type: real
   reg_param: 10.
-  optimizer: rmsprop
   n_test_samples_with_same_shape_code: 4
   take_model_average: true
   model_average_beta: 0.999
@@ -88,6 +87,16 @@ training:
   save_every: 900
   backup_every: 50000
   video_every: 10000
+disc_optimiser:
+  _target_: torch.optim.RMSprop
+  lr: "${training.lr_d}"
+  alpha: 0.99
+  eps: 1e-8
+gen_optimiser:
+  _target_: torch.optim.RMSprop
+  lr: "${training.lr_g}"
+  alpha: 0.99
+  eps: 1e-8
 figure_details:
     filename:
     ntest: 8
