@@ -1,7 +1,9 @@
-expname: devel
+# @package _global_
+expname: devel_cars
 data:
-  datadir: /home/ed/datasets/img_align_celeba/train/face
-  type: celebA
+  datadir: /home/ed/datasets/kaggle_cars/train
+  maskdir: /home/ed/datasets/kaggle_cars/train_masks
+  type: image_folder
   imsize: 32
   white_bkgd: False
   radius: 9.5,10.5

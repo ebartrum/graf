@@ -1,7 +1,8 @@
-expname: celebA_64
+# @package _global_
+expname: kaggle_cars
 data:
-  datadir: /home/ed/datasets/10k_CelebA/train/face
-  type: celebA
+  datadir: data/kaggle_cars/train
+  type: image_folder
   imsize: 64
   white_bkgd: False
   radius: 9.5,10.5
@@ -9,7 +10,9 @@ data:
   far: 12.5
   fov: 10.
   umin: 0
-  umax: 0.25
+  umax: 1
   vmin: 0.32898992833716556 # 70 deg
   vmax: 0.45642212862617093   # 85 deg
-
+training:
+  take_model_average: false # TODO: remove
+  video_every: 1000

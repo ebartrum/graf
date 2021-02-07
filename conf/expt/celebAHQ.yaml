@@ -1,3 +1,4 @@
+# @package _global_
 expname: celebAHQ_256
 data:
   datadir: /PATH/TO/CELEBA_HQ

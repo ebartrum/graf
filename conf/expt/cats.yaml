@@ -1,3 +1,4 @@
+# @package _global_
 expname: cats_64
 data:
   datadir: data/cats

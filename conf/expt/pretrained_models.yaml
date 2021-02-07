@@ -1,3 +1,4 @@
+# @package _global_
 carla:
   64: https://s3.eu-central-1.amazonaws.com/avg-projects/graf/models/carla/carla_64.pt
   128: https://s3.eu-central-1.amazonaws.com/avg-projects/graf/models/carla/carla_128.pt

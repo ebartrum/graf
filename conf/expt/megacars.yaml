@@ -1,3 +1,4 @@
+# @package _global_
 expname: mega_cars
 data:
   datadir: data/megacars/train

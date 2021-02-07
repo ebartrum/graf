@@ -18,7 +18,7 @@ from graf.config import compute_render_poses
 class Figure(Callback):
     def __init__(self, cfg, parent_dir, pl_module=None, monitor=None):
        cfg = Namespace(**cfg)
-       self.save_dir = os.path.join(parent_dir, cfg.dir)
+       self.save_dir = os.path.join(parent_dir, "figures")
        self.filename = cfg.filename if cfg.filename else\
                f"{self.__class__.__name__}.png"
        if not os.path.exists(self.save_dir):

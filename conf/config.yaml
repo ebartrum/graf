@@ -1,3 +1,4 @@
+# @package _global_
 expname: default
 data:
   datadir: data/carla
@@ -71,3 +72,16 @@ training:
   save_every: 900
   backup_every: 50000
   video_every: 10000
+figure_details:
+    filename:
+    ntest: 8
+    noise_dim: "${z_dist.dim}"
+    data: "${data}"
+hydra:
+  output_subdir: null
+  run:
+    dir: .
+  job_logging:
+    disable_existing_loggers: false
+defaults:
+ - override hydra/job_logging: disabled

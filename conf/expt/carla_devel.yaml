@@ -1,3 +1,4 @@
+# @package _global_
 expname: carla_128
 data:
   imsize: 32

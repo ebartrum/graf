@@ -1,7 +1,8 @@
-expname: kaggle_cars
+# @package _global_
+expname: celebA
 data:
-  datadir: data/kaggle_cars/train
-  type: image_folder
+  datadir: data/img_align_celebA/face
+  type: celebA
   imsize: 64
   white_bkgd: False
   radius: 9.5,10.5
@@ -9,7 +10,7 @@ data:
   far: 12.5
   fov: 10.
   umin: 0
-  umax: 1
+  umax: 0.25
   vmin: 0.32898992833716556 # 70 deg
   vmax: 0.45642212862617093   # 85 deg
 training:

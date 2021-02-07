@@ -1,6 +1,7 @@
-expname: celebA
+# @package _global_
+expname: celebA_64
 data:
-  datadir: data/img_align_celebA/face
+  datadir: /home/ed/datasets/10k_CelebA/train/face
   type: celebA
   imsize: 64
   white_bkgd: False
@@ -12,6 +13,4 @@ data:
   umax: 0.25
   vmin: 0.32898992833716556 # 70 deg
   vmax: 0.45642212862617093   # 85 deg
-training:
-  take_model_average: false # TODO: remove
-  video_every: 1000
+

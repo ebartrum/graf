@@ -1,3 +1,4 @@
+# @package _global_
 expname: cub_64
 data:
   imsize: 64

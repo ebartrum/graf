@@ -26,6 +26,8 @@ from GAN_stability.gan_training.config import load_config, build_optimizers
 from graf.logger import CustomTensorBoardLogger
 from graf import training_step
 import torch.optim as optim
+import hydra
+from omegaconf import DictConfig
 
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
@@ -55,7 +57,7 @@ class BaseGAN(pl.LightningModule):
         train_dataset = get_dataset(self.cfg)
         return torch.utils.data.DataLoader(
             train_dataset,
-            batch_size=config['training']['batch_size'],
+            batch_size=self.cfg['training']['batch_size'],
             shuffle=True, pin_memory=True, sampler=None, drop_last=True)
 
 class GRAF(BaseGAN):
@@ -66,27 +68,22 @@ class GRAF(BaseGAN):
                 hwfr[:3])
         self.reg_param = cfg['training']['reg_param']
 
-parser = argparse.ArgumentParser(
-    description='Train a GAN with different regularization strategies.'
-)
-parser.add_argument('config', type=str, help='Path to config file.')
-args, unknown = parser.parse_known_args() 
-config = load_config(args.config, 'configs/default.yaml')
-config = update_config(config, unknown)
-assert(not config['data']['orthographic']), "orthographic not yet supported"
-config['data']['fov'] = float(config['data']['fov'])
 
-tb_logger = CustomTensorBoardLogger('results/',
-        name=config['expname'], default_hp_metric=False)
-model = GRAF(config)
-config['figure_details'] = {'dir': os.path.join(tb_logger.log_dir,'figures'),
-        'filename': None,
-        'ntest': 8,
-        'noise_dim': config['z_dist']['dim'],
-        'data': config['data']}
+@hydra.main(config_path="conf", config_name="config")
+def train(config: DictConfig) -> None:
+    assert(not config['data']['orthographic']), "orthographic not yet supported"
+    config['data']['fov'] = float(config['data']['fov'])
 
-callbacks = [GrafSampleGrid(cfg=config['figure_details'],
-    parent_dir='.', pl_module=model, monitor=None), GrafVideo(cfg=config['figure_details'],
-    parent_dir='.', pl_module=model, monitor=None)]
-pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks, logger=tb_logger)
-pl_trainer.fit(model) 
+    tb_logger = CustomTensorBoardLogger('results',
+            name=config['expname'], default_hp_metric=False)
+    model = GRAF(config)
+
+    callbacks = [GrafSampleGrid(cfg=config['figure_details'],
+        parent_dir=tb_logger.log_dir, pl_module=model, monitor=None),
+        GrafVideo(cfg=config['figure_details'],
+        parent_dir=tb_logger.log_dir, pl_module=model, monitor=None)]
+    pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks, logger=tb_logger)
+    pl_trainer.fit(model) 
+
+if __name__ == "__main__":
+    train()

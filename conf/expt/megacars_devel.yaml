@@ -1,3 +1,4 @@
+# @package _global_
 expname: mega_cars_devel
 data:
   datadir: /home/ed/datasets/meganet/cars/train
