@@ -58,11 +58,13 @@ class BaseGAN(pl.LightningModule):
                    'frequency': 1})
 
     def train_dataloader(self):
-        train_dataset = get_dataset(self.cfg)
+        train_dataset = instantiate(self.cfg.dataset.train)
         return torch.utils.data.DataLoader(
             train_dataset,
-            batch_size=self.cfg['training']['batch_size'],
-            shuffle=True, pin_memory=True, sampler=None, drop_last=True)
+            batch_size=self.cfg.training.batch_size,
+            shuffle=self.cfg.data.shuffle,
+            pin_memory=self.cfg.data.pin_memory,
+            drop_last=self.cfg.data.drop_last)
 
 class GRAF(BaseGAN):
     def __init__(self, cfg):
@@ -71,7 +73,6 @@ class GRAF(BaseGAN):
         self.img_to_patch = ImgToPatch(self.generator.ray_sampler,
                 hwfr[:3])
         self.reg_param = cfg['training']['reg_param']
-
 
 @hydra.main(config_path="conf", config_name="config")
 def train(config: DictConfig) -> None:

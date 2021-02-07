@@ -16,6 +16,13 @@ data:
   vmin: 0.                    # 0 deg, convert to degrees via arccos(1 - 2 * v) * 180. / pi
   vmax: 0.45642212862617093   # 85 deg, convert to degrees via arccos(1 - 2 * v) * 180. / pi
   crop: 0
+  shuffle: True
+  pin_memory: True
+  drop_last: True
+dataset:
+  train:
+    _target_: graf.config.get_dataset
+    config: "${}"
 nerf:
   i_embed: 0
   use_viewdirs: True
