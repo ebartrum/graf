@@ -43,14 +43,23 @@ class BaseGAN(pl.LightningModule):
         return training_step.graf(self, batch, batch_idx, optimizer_idx)
 
     def configure_optimizers(self):
-        g_optimizer, d_optimizer = build_optimizers(
-                self.generator, self.discriminator, self.cfg)
-        d_lr = d_optimizer.param_groups[0]['lr']
-        g_lr = g_optimizer.param_groups[0]['lr']
-        g_scheduler = build_lr_scheduler(g_optimizer, self.cfg, last_epoch=-1)
-        d_scheduler = build_lr_scheduler(d_optimizer, self.cfg, last_epoch=-1)
-        d_optimizer.param_groups[0]['lr'] = d_lr
-        g_optimizer.param_groups[0]['lr'] = g_lr
+        g_optimizer = optim.RMSprop(self.generator.parameters(),
+                lr=self.cfg.training.lr_g, alpha=0.99, eps=1e-8)
+        d_optimizer = optim.RMSprop(self.discriminator.parameters(),
+                lr=self.cfg.training.lr_d, alpha=0.99, eps=1e-8)
+
+        g_scheduler = optim.lr_scheduler.StepLR(
+            g_optimizer,
+            step_size=self.cfg['training']['lr_anneal_every'],
+            gamma=self.cfg['training']['lr_anneal'],
+            last_epoch=-1
+        )
+        d_scheduler = optim.lr_scheduler.StepLR(
+            d_optimizer,
+            step_size=self.cfg['training']['lr_anneal_every'],
+            gamma=self.cfg['training']['lr_anneal'],
+            last_epoch=-1
+        )
 
         return ({'optimizer': d_optimizer, 'lr_scheduler': d_scheduler,
                     'frequency': 1},
