@@ -1,10 +1,11 @@
 import numpy as np
 import torch
 from torchvision.transforms import *
-
 from .datasets import *
 from .transforms import FlexGridRaySampler
 from .utils import polar_to_cartesian, look_at, to_phi, to_theta
+from .models.generator import Generator
+from .models.discriminator import Discriminator
 
 
 def save_config(outpath, config):
@@ -134,8 +135,6 @@ def build_models(config, disc=True):
     
     from argparse import Namespace
     from submodules.nerf_pytorch.run_nerf_mod import create_nerf
-    from .models.generator import Generator
-    from .models.discriminator import Discriminator
 
     config_nerf = Namespace(**config['nerf'])
     # Update config for NERF
@@ -178,6 +177,14 @@ def build_models(config, disc=True):
         discriminator = Discriminator(**disc_kwargs)
 
     return generator, discriminator
+
+def build_discriminator(config):
+    disc_kwargs = {'nc': 3,       # channels for patch discriminator
+                   'ndf': config['ndf'],
+                   'imsize': int(np.sqrt(config['ray_sampler']['N_samples'])),
+                   'hflip': config['hflip']}
+
+    return Discriminator(**disc_kwargs)
 
 def build_generator(config):
     generator, _ = build_models(config, disc=False)

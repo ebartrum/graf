@@ -12,7 +12,8 @@ z_dist:
   dim: 32
   dim_appearance: 16 
 discriminator:
-  ndf: 16
+  config:
+    ndf: 16
 nerf:
   N_samples: 16
   netwidth: 32

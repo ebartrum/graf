@@ -39,9 +39,18 @@ ray_sampler:
   max_scale: 1.
   scale_anneal: 0.0025        # no effect if scale_anneal<0, else the minimum scale decreases exponentially until converge to min_scale
   N_samples: 1024             # 32*32, patchsize
+generator:
+  _target_:
+    graf.config.build_generator
+  config:
+    "${}"
 discriminator:
-  ndf: 64
-  hflip: False                # Randomly flip discriminator input horizontally
+  _target_:
+    graf.config.build_discriminator
+  config:
+    hflip: False
+    ray_sampler: "${ray_sampler}"
+    ndf: 64
 training:
   outdir: ./results
   model_file: model.pt

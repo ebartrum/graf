@@ -14,7 +14,9 @@ import sys
 sys.path.append('submodules')        # needed to make imports work in GAN_stability
 
 from graf.gan_training import Trainer, Evaluator
-from graf.config import get_dataset, get_hwfr, build_models, save_config, update_config, build_lr_scheduler, compute_render_poses
+from graf.config import get_dataset, get_hwfr, build_models, build_generator,\
+        save_config, update_config, build_lr_scheduler, compute_render_poses,\
+        build_discriminator
 from graf.utils import count_trainable_parameters, get_nsamples
 from graf.transforms import ImgToPatch
 from graf.figures import GrafSampleGrid, GrafVideo
@@ -27,13 +29,15 @@ from graf.logger import CustomTensorBoardLogger
 from graf import training_step
 import torch.optim as optim
 import hydra
+from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 class BaseGAN(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
-        self.generator, self.discriminator = build_models(cfg)
+        self.generator = instantiate(cfg.generator)
+        self.discriminator = instantiate(cfg.discriminator)
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         return training_step.graf(self, batch, batch_idx, optimizer_idx)
