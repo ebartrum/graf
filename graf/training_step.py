@@ -67,8 +67,3 @@ def compute_grad2(d_outs, x_in):
         assert(grad_dout2.size() == x_in.size())
         reg += grad_dout2.view(batch_size, -1).sum(1)
     return reg / len(d_outs)
-
-# Utility functions
-def toggle_grad(model, requires_grad):
-    for p in model.parameters():
-        p.requires_grad_(requires_grad)
