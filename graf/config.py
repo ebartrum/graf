@@ -135,8 +135,8 @@ def build_models(config, disc=True):
     config_nerf.chunk = min(config['train']['chunk'], 1024*config['train']['batch_size'])     # let batch size for training with patches limit the maximal memory
     config_nerf.netchunk = config['train']['netchunk']
     config_nerf.white_bkgd = config['data']['white_bkgd']
-    config_nerf.feat_dim = config['z_dist']['dim']
-    config_nerf.feat_dim_appearance = config['z_dist']['dim_appearance']
+    config_nerf.feat_dim = config['train']['noise_dim']
+    config_nerf.feat_dim_appearance = config['train']['noise_dim_appearance']
 
     render_kwargs_train, render_kwargs_test, params, named_parameters = create_nerf(config_nerf)
 

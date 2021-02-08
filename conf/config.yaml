@@ -5,6 +5,8 @@ lm:
   _target_: train.GRAF
 train:
   batch_size: 8
+  noise_dim: 256
+  noise_dim_appearance: 128         # This dimension is subtracted from "dim"
   chunk: 32768                # 1024*32
   netchunk: 65536             # 1024*64
   n_test_samples_with_same_shape_code: 4
@@ -78,10 +80,6 @@ nerf:
   perturb: 1.
   raw_noise_std: 1.
   decrease_noise: True
-z_dist:
-  type: gauss
-  dim: 256
-  dim_appearance: 128         # This dimension is subtracted from "dim"
 ray_sampler:
   min_scale: 0.25
   max_scale: 1.
@@ -102,7 +100,7 @@ discriminator:
 figure_details:
     filename:
     ntest: 8
-    noise_dim: "${z_dist.dim}"
+    noise_dim: "${train.noise_dim}"
     data: "${data}"
     monitor:
 hydra:
