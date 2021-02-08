@@ -36,9 +36,6 @@ class BaseGAN(pl.LightningModule):
         self.generator = instantiate(cfg.generator)
         self.discriminator = instantiate(cfg.discriminator)
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
-        return training_step.graf(self, batch, batch_idx, optimizer_idx)
-
     def configure_optimizers(self):
         opt_disc = instantiate(self.cfg.disc_optimiser,
             self.discriminator.parameters())
@@ -73,6 +70,9 @@ class GRAF(BaseGAN):
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x * 2 - 1),
         ])
+
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        return training_step.graf(self, batch, batch_idx, optimizer_idx)
 
 @hydra.main(config_path="conf", config_name="config")
 def train(cfg: DictConfig) -> None:
