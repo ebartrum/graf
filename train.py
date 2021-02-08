@@ -57,8 +57,8 @@ class BaseGAN(pl.LightningModule):
         return torch.utils.data.DataLoader(
             train_dataset,
             batch_size=self.cfg.train.batch_size,
-            shuffle=self.cfg.data.shuffle,
-            drop_last=self.cfg.data.drop_last)
+            shuffle=True,
+            drop_last=True)
 
 class GRAF(BaseGAN):
     def __init__(self, cfg):
