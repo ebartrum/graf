@@ -58,7 +58,6 @@ class BaseGAN(pl.LightningModule):
             train_dataset,
             batch_size=self.cfg.train.batch_size,
             shuffle=self.cfg.data.shuffle,
-            pin_memory=self.cfg.data.pin_memory,
             drop_last=self.cfg.data.drop_last)
 
 class GRAF(BaseGAN):
