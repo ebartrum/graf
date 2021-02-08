@@ -66,6 +66,7 @@ class BaseGAN(pl.LightningModule):
 class GRAF(BaseGAN):
     def __init__(self, cfg):
         super().__init__(cfg)
+        assert(not cfg.data.orthographic), "orthographic not yet supported"
         hwfr = get_hwfr(cfg)
         self.img_to_patch = ImgToPatch(self.generator.ray_sampler,
                 hwfr[:3])
@@ -73,9 +74,6 @@ class GRAF(BaseGAN):
 
 @hydra.main(config_path="conf", config_name="config")
 def train(config: DictConfig) -> None:
-    assert(not config['data']['orthographic']), "orthographic not yet supported"
-    config['data']['fov'] = float(config['data']['fov'])
-
     tb_logger = CustomTensorBoardLogger('results',
             name=config['expname'], default_hp_metric=False)
     model = GRAF(config)
