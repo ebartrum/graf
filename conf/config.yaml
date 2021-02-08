@@ -97,6 +97,16 @@ gen_optimiser:
   lr: "${training.lr_g}"
   alpha: 0.99
   eps: 1e-8
+disc_scheduler:
+  _target_: torch.optim.lr_scheduler.StepLR
+  step_size: "${training.lr_anneal_every}"
+  gamma: "${training.lr_anneal}"
+  last_epoch: -1
+gen_scheduler:
+  _target_: torch.optim.lr_scheduler.StepLR
+  step_size: "${training.lr_anneal_every}"
+  gamma: "${training.lr_anneal}"
+  last_epoch: -1
 figure_details:
     filename:
     ntest: 8

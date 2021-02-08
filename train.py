@@ -47,19 +47,8 @@ class BaseGAN(pl.LightningModule):
             self.discriminator.parameters())
         opt_gen = instantiate(self.cfg.gen_optimiser,
             self.generator.parameters())
-        d_scheduler = optim.lr_scheduler.StepLR(
-            opt_disc,
-            step_size=self.cfg['training']['lr_anneal_every'],
-            gamma=self.cfg['training']['lr_anneal'],
-            last_epoch=-1
-        )
-        g_scheduler = optim.lr_scheduler.StepLR(
-            opt_gen,
-            step_size=self.cfg['training']['lr_anneal_every'],
-            gamma=self.cfg['training']['lr_anneal'],
-            last_epoch=-1
-        )
-
+        d_scheduler = instantiate(self.cfg.disc_scheduler, opt_disc)
+        g_scheduler = instantiate(self.cfg.gen_scheduler, opt_gen)
         return ({'optimizer': opt_disc, 'lr_scheduler': d_scheduler,
                     'frequency': 1},
                {'optimizer': opt_gen, 'lr_scheduler': g_scheduler,
