@@ -12,8 +12,8 @@ from PIL import Image
 from copy import deepcopy
 from tqdm import tqdm
 from argparse import Namespace
-from graf.gan_training import Evaluator
-from graf.config import compute_render_poses
+from .gan_training import Evaluator
+from .config import compute_render_poses
 
 class Figure(Callback):
     def __init__(self, cfg, parent_dir, pl_module=None):

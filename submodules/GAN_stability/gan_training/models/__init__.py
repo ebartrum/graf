@@ -1,4 +1,4 @@
-from submodules.GAN_stability.gan_training.models import (
+from . import (
     resnet, resnet2, resnet3, resnet4,
 )
 

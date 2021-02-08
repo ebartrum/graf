@@ -1,7 +1,7 @@
 import torch
 from math import sqrt, exp
 
-from submodules.nerf_pytorch.run_nerf_helpers_mod import get_rays, get_rays_ortho
+from ..submodules.nerf_pytorch.run_nerf_helpers_mod import get_rays, get_rays_ortho
 
 
 class ImgToPatch(object):

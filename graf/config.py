@@ -6,7 +6,7 @@ from .transforms import FlexGridRaySampler
 from .utils import polar_to_cartesian, look_at, to_phi, to_theta
 from .models.generator import Generator
 from .models.discriminator import Discriminator
-
+from ..submodules.nerf_pytorch.run_nerf_mod import create_nerf
 
 def save_config(outpath, config):
     from yaml import safe_dump
@@ -128,7 +128,6 @@ def get_render_poses(radius, angle_range=(0, 360), theta=0, N=40, swap_angles=Fa
 def build_models(config, disc=True):
     
     from argparse import Namespace
-    from submodules.nerf_pytorch.run_nerf_mod import create_nerf
 
     config_nerf = Namespace(**config['nerf'])
     # Update config for NERF

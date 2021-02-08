@@ -9,20 +9,20 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib
 import sys
 
-from graf.gan_training import Trainer, Evaluator
-from graf.config import get_dataset, get_hwfr, build_models, build_generator,\
+from .graf.gan_training import Trainer, Evaluator
+from .graf.config import get_dataset, get_hwfr, build_models, build_generator,\
         save_config, update_config, build_lr_scheduler, compute_render_poses,\
         build_discriminator
-from graf.utils import count_trainable_parameters, get_nsamples
-from graf.transforms import ImgToPatch
-from graf.figures import GrafSampleGrid, GrafVideo
+from .graf.utils import count_trainable_parameters, get_nsamples
+from .graf.transforms import ImgToPatch
+from .graf.figures import GrafSampleGrid, GrafVideo
 
-from submodules.GAN_stability.gan_training import utils
-from submodules.GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
-from submodules.GAN_stability.gan_training.distributions import get_zdist
-from submodules.GAN_stability.gan_training.config import load_config, build_optimizers
-from graf.logger import CustomTensorBoardLogger
-from graf import training_step
+from .submodules.GAN_stability.gan_training import utils
+from .submodules.GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
+from .submodules.GAN_stability.gan_training.distributions import get_zdist
+from .submodules.GAN_stability.gan_training.config import load_config, build_optimizers
+from .graf.logger import CustomTensorBoardLogger
+from .graf import training_step
 import torch.optim as optim
 from torchvision import transforms
 import hydra
