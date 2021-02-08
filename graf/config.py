@@ -39,21 +39,15 @@ def update_config(config, unknown):
 
     return config
 
-def get_dataset(config):
+def get_dataset(config, transform):
     H = W = imsize = config['data']['imsize']
     dset_type = config['data']['type']
     fov = config['data']['fov']
 
-    transforms = Compose([
-        Resize(imsize),
-        ToTensor(),
-        Lambda(lambda x: x * 2 - 1),
-    ])
-
     kwargs = {
         'data_dirs': config['data']['datadir'],
         'mask_dir': config['data']['maskdir'] if 'maskdir' in config['data'].keys() else None,
-        'transforms': transforms
+        'transforms': transform
     }
 
     if dset_type == 'carla':
@@ -61,19 +55,19 @@ def get_dataset(config):
 
     elif dset_type == 'celebA':
         assert imsize <= 128, 'cropped GT data has lower resolution than imsize, consider using celebA_hq instead'
-        transforms.transforms.insert(0, RandomHorizontalFlip())
-        transforms.transforms.insert(0, CenterCrop(108))
+        transform.transforms.insert(0, RandomHorizontalFlip())
+        transform.transforms.insert(0, CenterCrop(108))
 
         dset = CelebA(**kwargs)
 
     elif dset_type == 'celebA_hq':
-        transforms.transforms.insert(0, RandomHorizontalFlip())
-        transforms.transforms.insert(0, CenterCrop(650))
+        transform.transforms.insert(0, RandomHorizontalFlip())
+        transform.transforms.insert(0, CenterCrop(650))
 
         dset = CelebAHQ(**kwargs)
 
     elif dset_type == 'cats':
-      transforms.transforms.insert(0, RandomHorizontalFlip())
+      transform.transforms.insert(0, RandomHorizontalFlip())
       dset = Cats(**kwargs)
   
     elif dset_type == 'cub':
@@ -81,10 +75,10 @@ def get_dataset(config):
 
     elif dset_type == 'image_folder':
         if config['data']['crop'] > 0:
-            transforms.transforms.insert(0, CenterCrop(config['data']['crop']))
+            transform.transforms.insert(0, CenterCrop(config['data']['crop']))
         dset = ImageDataset(data_dirs=glob.glob(kwargs['data_dirs']+'/*'),
                 mask_dir=kwargs['mask_dir'],
-                transforms=transforms,
+                transforms=transform,
                 white_alpha_bg=config['data']['white_alpha_bg'])
 
     dset.H = dset.W = imsize
@@ -138,8 +132,8 @@ def build_models(config, disc=True):
 
     config_nerf = Namespace(**config['nerf'])
     # Update config for NERF
-    config_nerf.chunk = min(config['training']['chunk'], 1024*config['training']['batch_size'])     # let batch size for training with patches limit the maximal memory
-    config_nerf.netchunk = config['training']['netchunk']
+    config_nerf.chunk = min(config['train']['chunk'], 1024*config['train']['batch_size'])     # let batch size for training with patches limit the maximal memory
+    config_nerf.netchunk = config['train']['netchunk']
     config_nerf.white_bkgd = config['data']['white_bkgd']
     config_nerf.feat_dim = config['z_dist']['dim']
     config_nerf.feat_dim_appearance = config['z_dist']['dim_appearance']
@@ -192,19 +186,19 @@ def build_generator(config):
 
 def build_lr_scheduler(optimizer, config, last_epoch=-1):
     import torch.optim as optim
-    step_size = config['training']['lr_anneal_every']
+    step_size = config['train']['lr_anneal_every']
     if isinstance(step_size, str):
         milestones = [int(m) for m in step_size.split(',')]
         lr_scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer,
             milestones=milestones,
-            gamma=config['training']['lr_anneal'],
+            gamma=config['train']['lr_anneal'],
             last_epoch=last_epoch)
     else:
         lr_scheduler = optim.lr_scheduler.StepLR(
             optimizer,
             step_size=step_size,
-            gamma=config['training']['lr_anneal'],
+            gamma=config['train']['lr_anneal'],
             last_epoch=last_epoch
         )
     return lr_scheduler
