@@ -73,14 +73,14 @@ class GRAF(BaseGAN):
         self.reg_param = cfg['training']['reg_param']
 
 @hydra.main(config_path="conf", config_name="config")
-def train(config: DictConfig) -> None:
+def train(cfg: DictConfig) -> None:
     tb_logger = CustomTensorBoardLogger('results',
-            name=config['expname'], default_hp_metric=False)
-    model = GRAF(config)
+            name=cfg.expname, default_hp_metric=False)
+    model = instantiate(cfg.lm, cfg)
 
-    callbacks = [GrafSampleGrid(cfg=config['figure_details'],
+    callbacks = [GrafSampleGrid(cfg=cfg.figure_details,
         parent_dir=tb_logger.log_dir, pl_module=model, monitor=None),
-        GrafVideo(cfg=config['figure_details'],
+        GrafVideo(cfg=cfg.figure_details,
         parent_dir=tb_logger.log_dir, pl_module=model, monitor=None)]
     pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks, logger=tb_logger)
     pl_trainer.fit(model) 
