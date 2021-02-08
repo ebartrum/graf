@@ -44,8 +44,8 @@ class BaseGAN(pl.LightningModule):
             self.discriminator.parameters())
         opt_gen = instantiate(self.cfg.gen_optimiser,
             self.generator.parameters())
-        d_scheduler = instantiate(self.cfg.disc_scheduler, opt_disc)
-        g_scheduler = instantiate(self.cfg.gen_scheduler, opt_gen)
+        d_scheduler = instantiate(self.cfg.scheduler, opt_disc)
+        g_scheduler = instantiate(self.cfg.scheduler, opt_gen)
         return ({'optimizer': opt_disc, 'lr_scheduler': d_scheduler,
                     'frequency': self.cfg.optimisation.disc_freq},
                {'optimizer': opt_gen, 'lr_scheduler': g_scheduler,

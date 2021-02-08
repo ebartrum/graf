@@ -37,12 +37,7 @@ gen_optimiser:
   lr: "${optimisation.lr_g}"
   alpha: 0.99
   eps: 1e-8
-disc_scheduler:
-  _target_: torch.optim.lr_scheduler.StepLR
-  step_size: "${optimisation.lr_anneal_every}"
-  gamma: "${optimisation.lr_anneal}"
-  last_epoch: -1
-gen_scheduler:
+scheduler:
   _target_: torch.optim.lr_scheduler.StepLR
   step_size: "${optimisation.lr_anneal_every}"
   gamma: "${optimisation.lr_anneal}"
