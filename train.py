@@ -30,11 +30,12 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 class BaseGAN(pl.LightningModule):
-    def __init__(self, cfg):
+    def __init__(self, cfg, logging_dir=None):
         super().__init__()
         self.cfg = cfg
         self.generator = instantiate(cfg.generator)
         self.discriminator = instantiate(cfg.discriminator)
+        self.logging_dir=logging_dir
 
     def configure_optimizers(self):
         opt_disc = instantiate(self.cfg.disc_optimiser,
@@ -56,8 +57,8 @@ class BaseGAN(pl.LightningModule):
             shuffle=True, drop_last=True)
 
 class GRAF(BaseGAN):
-    def __init__(self, cfg):
-        super().__init__(cfg)
+    def __init__(self, cfg, logging_dir=None):
+        super().__init__(cfg, logging_dir)
         assert(not cfg.data.orthographic), "orthographic not yet supported"
         hwfr = get_hwfr(cfg)
         self.img_to_patch = ImgToPatch(self.generator.ray_sampler,
@@ -76,7 +77,7 @@ class GRAF(BaseGAN):
 def train(cfg: DictConfig) -> None:
     tb_logger = CustomTensorBoardLogger('results',
             name=cfg.name, default_hp_metric=False)
-    model = instantiate(cfg.lm, cfg)
+    model = instantiate(cfg.lm, cfg, logging_dir=tb_logger.log_dir)
 
     callbacks = [instantiate(fig, pl_module=model,
                 cfg=cfg.figure_details,
