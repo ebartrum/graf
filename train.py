@@ -15,7 +15,6 @@ from .graf.config import get_dataset, get_hwfr, build_models, build_generator,\
         build_discriminator
 from .graf.utils import count_trainable_parameters, get_nsamples
 from .graf.transforms import ImgToPatch
-from .graf.figures import GrafSampleGrid, GrafVideo
 
 from .submodules.GAN_stability.gan_training import utils
 from .submodules.GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
