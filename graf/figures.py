@@ -16,14 +16,14 @@ from graf.gan_training import Evaluator
 from graf.config import compute_render_poses
 
 class Figure(Callback):
-    def __init__(self, cfg, parent_dir, pl_module=None, monitor=None):
+    def __init__(self, cfg, parent_dir, pl_module=None):
        cfg = Namespace(**cfg)
        self.save_dir = os.path.join(parent_dir, "figures")
        self.filename = cfg.filename if cfg.filename else\
                f"{self.__class__.__name__}.png"
        if not os.path.exists(self.save_dir):
            os.makedirs(self.save_dir)
-       self.monitor = monitor
+       self.monitor = cfg.monitor
        self.current_best_metric = np.inf
 
     @abstractmethod
@@ -66,8 +66,8 @@ class Figure(Callback):
     #         print(f"Current metric {current_monitor} is worse than current best {self.current_best_metric}. Skipping figures")
 
 class AnimationFigure(Figure):
-    def __init__(self, cfg, parent_dir, monitor):
-       super(AnimationFigure, self).__init__(cfg, parent_dir, monitor)
+    def __init__(self, cfg, parent_dir):
+       super(AnimationFigure, self).__init__(cfg, parent_dir)
        self.filename = cfg.filename if cfg.filename else\
                f"{self.__class__.__name__}.gif"
 
@@ -98,8 +98,8 @@ class AnimationFigure(Figure):
         self.save(array_list)
 
 class Grid(Figure):
-    def __init__(self, cfg, parent_dir, monitor, ncol=4):
-        super(Grid, self).__init__(cfg, parent_dir, monitor)
+    def __init__(self, cfg, parent_dir, ncol=4):
+        super(Grid, self).__init__(cfg, parent_dir)
         self.ncol = ncol
 
     @torch.no_grad()
@@ -112,16 +112,16 @@ class Grid(Figure):
         return fig_array
 
 class AnimationGrid(AnimationFigure):
-    def __init__(self, cfg, parent_dir, monitor, ncol=4):
-        super(AnimationGrid, self).__init__(cfg, parent_dir, monitor)
+    def __init__(self, cfg, parent_dir, ncol=4):
+        super(AnimationGrid, self).__init__(cfg, parent_dir)
         self.ncol = ncol
 
     def draw(self, pl_module):
         pass
 
 class SampleGrid(Grid):
-    def __init__(self, cfg, parent_dir, monitor, ncol=4):
-        super(SampleGrid, self).__init__(cfg, parent_dir, monitor, ncol)
+    def __init__(self, cfg, parent_dir, ncol=4):
+        super(SampleGrid, self).__init__(cfg, parent_dir, ncol)
 
     @torch.no_grad()
     def create_rows(self, pl_module):
@@ -132,8 +132,8 @@ class SampleGrid(Grid):
         return rows
 
 class Interpolation(AnimationGrid):
-    def __init__(self, cfg, parent_dir, monitor):
-        super(Interpolation, self).__init__(cfg, parent_dir, monitor)
+    def __init__(self, cfg, parent_dir):
+        super(Interpolation, self).__init__(cfg, parent_dir)
 
     def draw(self, pl_module):
         n_frames = 40
@@ -167,8 +167,8 @@ class Interpolation(AnimationGrid):
         return fig_array
 
 class GrafSampleGrid(Grid):
-    def __init__(self, cfg, parent_dir, pl_module, monitor, ncol=4):
-        super(GrafSampleGrid, self).__init__(cfg, parent_dir, monitor, ncol)
+    def __init__(self, cfg, parent_dir, pl_module, ncol=4):
+        super(GrafSampleGrid, self).__init__(cfg, parent_dir, ncol)
         cfg = Namespace(**cfg)
         self.ntest = cfg.ntest
         self.ztest = torch.randn(self.ntest, cfg.noise_dim)
@@ -192,8 +192,8 @@ class GrafSampleGrid(Grid):
         self.save(fig_array, filename=f"{self.filename}".replace(".", f"_{pl_module.global_step}."))
 
 class GrafVideo(Figure):
-    def __init__(self, cfg, parent_dir, pl_module, monitor):
-        super(GrafVideo, self).__init__(cfg, parent_dir, monitor)
+    def __init__(self, cfg, parent_dir, pl_module):
+        super(GrafVideo, self).__init__(cfg, parent_dir)
         self.cfg = Namespace(**cfg)
         self.ntest = self.cfg.ntest
         self.render_poses = compute_render_poses(cfg)

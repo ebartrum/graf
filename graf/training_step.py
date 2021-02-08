@@ -9,7 +9,8 @@ def graf(pl_module, batch, batch_idx, optimizer_idx):
 
     # Sample patches for real data
     rgbs = pl_module.img_to_patch(x_real.to(pl_module.device))          # N_samples x C
-    z = torch.randn(pl_module.cfg['training']['batch_size'], pl_module.cfg['z_dist']['dim'])
+    z = torch.randn(pl_module.cfg['training']['batch_size'],
+            pl_module.cfg['z_dist']['dim'], device=pl_module.device)
 
     if optimizer_idx == 0:
         return graf_discriminator_trainstep(pl_module, rgbs,z=z)

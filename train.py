@@ -5,13 +5,9 @@ from os import path
 import time
 import copy
 import torch
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
-
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib
-
 import sys
-sys.path.append('submodules')        # needed to make imports work in GAN_stability
 
 from graf.gan_training import Trainer, Evaluator
 from graf.config import get_dataset, get_hwfr, build_models, build_generator,\
@@ -21,10 +17,10 @@ from graf.utils import count_trainable_parameters, get_nsamples
 from graf.transforms import ImgToPatch
 from graf.figures import GrafSampleGrid, GrafVideo
 
-from GAN_stability.gan_training import utils
-from GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
-from GAN_stability.gan_training.distributions import get_zdist
-from GAN_stability.gan_training.config import load_config, build_optimizers
+from submodules.GAN_stability.gan_training import utils
+from submodules.GAN_stability.gan_training.train import update_average, toggle_grad, compute_grad2
+from submodules.GAN_stability.gan_training.distributions import get_zdist
+from submodules.GAN_stability.gan_training.config import load_config, build_optimizers
 from graf.logger import CustomTensorBoardLogger
 from graf import training_step
 import torch.optim as optim
@@ -78,10 +74,11 @@ def train(cfg: DictConfig) -> None:
             name=cfg.expname, default_hp_metric=False)
     model = instantiate(cfg.lm, cfg)
 
-    callbacks = [GrafSampleGrid(cfg=cfg.figure_details,
-        parent_dir=tb_logger.log_dir, pl_module=model, monitor=None),
-        GrafVideo(cfg=cfg.figure_details,
-        parent_dir=tb_logger.log_dir, pl_module=model, monitor=None)]
+    callbacks = [instantiate(fig, pl_module=model,
+                cfg=cfg.figure_details,
+                parent_dir=tb_logger.log_dir)
+            for fig in cfg.figures.values()]
+    callbacks=[]
     pl_trainer = pl.Trainer(gpus=1, callbacks=callbacks, logger=tb_logger)
     pl_trainer.fit(model) 
 

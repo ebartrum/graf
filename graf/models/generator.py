@@ -95,7 +95,7 @@ class Generator(nn.Module):
         R = look_at(loc)[0]
 
         RT = np.concatenate([R, loc.reshape(3, 1)], axis=1)
-        RT = torch.Tensor(RT.astype(np.float32))
+        RT = torch.Tensor(RT.astype(np.float32)).to(self.device)
         return RT
 
     def sample_rays(self):

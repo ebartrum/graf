@@ -1,8 +1,8 @@
 import yaml
 from torch import optim
 from os import path
-from GAN_stability.gan_training.models import generator_dict, discriminator_dict
-from GAN_stability.gan_training.train import toggle_grad
+from submodules.GAN_stability.gan_training.models import generator_dict, discriminator_dict
+from submodules.GAN_stability.gan_training.train import toggle_grad
 
 
 # General config

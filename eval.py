@@ -6,19 +6,15 @@ import time
 import copy
 import csv
 import torch
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
 from torchvision.utils import save_image
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib
-# matplotlib.use('Agg')
 
 # import ssl          # enable if downloading models gives CERTIFICATE_VERIFY_FAILED error
 # ssl._create_default_https_context = ssl._create_unverified_context
 
 import sys
-sys.path.append('submodules')        # needed to make imports work in GAN_stability
-
 from graf.gan_training import Evaluator as Evaluator
 from graf.config import get_data, build_models, update_config, get_render_poses
 from graf.utils import count_trainable_parameters, to_phi, to_theta, get_nsamples

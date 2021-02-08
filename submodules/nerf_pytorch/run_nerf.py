@@ -9,11 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
 import matplotlib.pyplot as plt
-
 from nerf_pytorch.run_nerf_helpers import *
-
 from nerf_pytorch.load_llff import load_llff_data
 from nerf_pytorch.load_deepvoxels import load_dv_data
 from nerf_pytorch.load_blender import load_blender_data

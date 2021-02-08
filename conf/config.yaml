@@ -114,6 +114,7 @@ figure_details:
     ntest: 8
     noise_dim: "${z_dist.dim}"
     data: "${data}"
+    monitor:
 hydra:
   output_subdir: null
   run:
@@ -121,4 +122,6 @@ hydra:
   job_logging:
     disable_existing_loggers: false
 defaults:
+ - /figures@figures.graf_sample_grid: graf_sample_grid
+ - /figures@figures.graf_video: graf_video
  - override hydra/job_logging: disabled
