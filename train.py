@@ -47,9 +47,9 @@ class BaseGAN(pl.LightningModule):
         d_scheduler = instantiate(self.cfg.disc_scheduler, opt_disc)
         g_scheduler = instantiate(self.cfg.gen_scheduler, opt_gen)
         return ({'optimizer': opt_disc, 'lr_scheduler': d_scheduler,
-                    'frequency': 1},
+                    'frequency': self.cfg.optimisation.disc_freq},
                {'optimizer': opt_gen, 'lr_scheduler': g_scheduler,
-                   'frequency': 1})
+                   'frequency': self.cfg.optimisation.gen_freq})
 
     def train_dataloader(self):
         train_dataset = instantiate(self.cfg.dataset.train,

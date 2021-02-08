@@ -25,6 +25,8 @@ optimisation:
   lr_anneal: 0.5
   lr_anneal_every: 50000,100000,200000
   equalize_lr: False
+  gen_freq: 1
+  disc_freq: 1
 disc_optimiser:
   _target_: torch.optim.RMSprop
   lr: "${optimisation.lr_d}"
@@ -63,9 +65,6 @@ data:
   vmin: 0.                    # 0 deg, convert to degrees via arccos(1 - 2 * v) * 180. / pi
   vmax: 0.45642212862617093   # 85 deg, convert to degrees via arccos(1 - 2 * v) * 180. / pi
   crop: 0
-  shuffle: True
-  pin_memory: True
-  drop_last: True
 dataset:
   train:
     _target_: graf.config.get_dataset
