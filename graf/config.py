@@ -46,7 +46,7 @@ def get_dataset(config, transform):
     fov = config['data']['fov']
 
     kwargs = {
-        'data_dirs': config['data']['datadir'],
+        'data_dirs': config.root,
         'mask_dir': config['data']['maskdir'] if 'maskdir' in config['data'].keys() else None,
         'transforms': transform
     }
@@ -88,7 +88,7 @@ def get_dataset(config, transform):
     if isinstance(radius, str):
         radius = tuple(float(r) for r in radius.split(','))
     dset.radius = radius
-    print('Loaded {}'.format(dset_type), imsize, len(dset), config['data']['datadir'])
+    print('Loaded {}'.format(dset_type), imsize, len(dset), config.root)
     return dset
 
 def get_hwfr(config):
