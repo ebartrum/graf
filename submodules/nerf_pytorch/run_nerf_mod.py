@@ -176,9 +176,9 @@ def render_path(render_poses, hwf, chunk, render_kwargs, features=None, gt_imgs=
 
 
 def create_nerf(args):
-    embed_fn, input_ch = get_embedder(args.multires, args.i_embed)
+    embed_fn, input_ch = get_embedder(args.multires, args.i_embed, args.type)
 
-    input_ch += args.feat_dim - args.feat_dim_appearance
+    input_ch += args.feat_dim - args.feat_dim_appearance # the shape channels are the input channels
 
     input_ch_views = 0
     embeddirs_fn = None

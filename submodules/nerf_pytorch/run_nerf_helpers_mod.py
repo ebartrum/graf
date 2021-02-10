@@ -50,7 +50,23 @@ class Embedder:
         return torch.cat([fn(inputs) for fn in self.embed_fns], -1)
 
 
-def get_embedder(multires, i=0):
+class SphericalEmbedder(Embedder):
+    def __init__(self, **kwargs):
+        super(SphericalEmbedder, self).__init__(**kwargs)
+        
+    def embed(self, inputs, eps=1e-5):
+        x, y, z = inputs[:,0], inputs[:,1], inputs[:,2]
+        r = (x**2 + y**2)**0.5
+        rho = (x**2 + y**2 + z**2)**0.5
+        sin_theta = y/(r+eps)
+        cos_phi = z/(rho+eps)
+        theta = torch.asin(sin_theta)
+        phi = torch.acos(cos_phi)
+        sd = r - 1
+        spherical_input = torch.stack([theta, phi, sd], dim=1)
+        return torch.cat([fn(spherical_input) for fn in self.embed_fns], -1)
+
+def get_embedder(multires, i=0, nerf_type="normal"):
     if i == -1:
         return nn.Identity(), 3
     
@@ -63,10 +79,14 @@ def get_embedder(multires, i=0):
                 'periodic_fns' : [torch.sin, torch.cos],
     }
     
-    embedder_obj = Embedder(**embed_kwargs)
-    embed = lambda x, eo=embedder_obj : eo.embed(x)
-    return embed, embedder_obj.out_dim
-
+    if nerf_type == "normal":
+        embedder_obj = Embedder(**embed_kwargs)
+        embed = lambda x, eo=embedder_obj : eo.embed(x)
+        return embed, embedder_obj.out_dim
+    elif nerf_type == "surf_nerf":
+        embedder_obj = SphericalEmbedder(**embed_kwargs)
+        embed = lambda x, eo=embedder_obj : eo.embed(x)
+        return embed, embedder_obj.out_dim
 
 # Model
 class NeRF(nn.Module):
@@ -99,7 +119,7 @@ class NeRF(nn.Module):
             self.output_linear = nn.Linear(W, output_ch)
 
     def forward(self, x):
-        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
+        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1) #this is where the split happens.
         h = input_pts
         for i, l in enumerate(self.pts_linears):
             h = self.pts_linears[i](h)
@@ -120,7 +140,6 @@ class NeRF(nn.Module):
             outputs = torch.cat([rgb, alpha], -1)
         else:
             outputs = self.output_linear(h)
-
         return outputs    
 
     def load_weights_from_keras(self, weights):
